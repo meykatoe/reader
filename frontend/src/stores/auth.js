@@ -24,7 +24,7 @@ export async function signIn(form) {
 
 export async function signUp(form) {
   await authApi.register(form)
-  await signIn(form)
+  await signIn({ username: form.username, password: form.password })
 }
 
 export async function signOut() {
