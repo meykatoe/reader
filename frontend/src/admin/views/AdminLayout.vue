@@ -6,7 +6,10 @@ import '../admin.css'
 
 const router = useRouter()
 
-const MENU = [{ to: '/admin/books', label: '圖書管理', authority: 'BOOK_MANAGE' }]
+const MENU = [
+  { to: '/admin/books', label: '圖書管理', authority: 'BOOK_MANAGE' },
+  { to: '/admin/users', label: '用戶管理', authority: 'USER_VIEW' },
+]
 
 const menu = computed(() => MENU.filter((item) => can(item.authority)))
 const roleName = computed(() => (adminAuth.admin?.permission === 1 ? '超級管理員' : '一般管理員'))

@@ -13,7 +13,14 @@ export const adminRoutes = [
     component: () => import('./views/AdminLayout.vue'),
     meta: { admin: true },
     redirect: '/admin/books',
-    children: [{ path: 'books', component: () => import('./views/AdminBooksView.vue') }],
+    children: [
+      { path: 'books', component: () => import('./views/AdminBooksView.vue') },
+      {
+        path: 'users',
+        component: () => import('./views/AdminUsersView.vue'),
+        meta: { authority: 'USER_VIEW' },
+      },
+    ],
   },
 ]
 
