@@ -6,3 +6,6 @@ spring:
 reader:
   storage:
     root: target/test-data
+  limits:
+    # 測試共用位址
+    registrations: 100000
