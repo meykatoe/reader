@@ -108,7 +108,9 @@ public enum ErrorCode {
     // 系統錯誤
     INTERNAL_ERROR(90000, HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error"),
     // 儲存故障
-    STORAGE_UNAVAILABLE(90001, HttpStatus.SERVICE_UNAVAILABLE, "Storage service unavailable");
+    STORAGE_UNAVAILABLE(90001, HttpStatus.SERVICE_UNAVAILABLE, "Storage service unavailable"),
+    // 郵件故障
+    MAIL_UNAVAILABLE(90002, HttpStatus.SERVICE_UNAVAILABLE, "Mail service unavailable");
 
     private final int code;
     private final HttpStatus status;

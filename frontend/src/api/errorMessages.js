@@ -53,6 +53,7 @@ export const ERROR_MESSAGES = {
 
   90000: '系統發生錯誤',
   90001: '儲存服務暫時無法使用',
+  90002: '郵件服務暫時無法使用，請稍後再試',
 }
 
 const SYSTEM_ERROR_FROM = 90000

@@ -1,6 +1,7 @@
 package com.reader.maintenance;
 
 import com.reader.book.BookRepository;
+import com.reader.mail.Mailer;
 import com.reader.storage.StorageProperties;
 import com.reader.storage.s3.S3Clients;
 import com.reader.storage.s3.S3ObjectStore;
@@ -21,31 +22,44 @@ class MaintenanceRunner implements ApplicationRunner {
     private final ConfigurableApplicationContext context;
     private final StorageProperties properties;
     private final BookRepository bookRepository;
+    private final Mailer mailer;
 
     MaintenanceRunner(ConfigurableApplicationContext context,
                       StorageProperties properties,
-                      BookRepository bookRepository) {
+                      BookRepository bookRepository,
+                      Mailer mailer) {
         this.context = context;
         this.properties = properties;
         this.bookRepository = bookRepository;
+        this.mailer = mailer;
     }
 
     @Override
     public void run(ApplicationArguments args) throws IOException {
         String task = context.getEnvironment().getRequiredProperty("reader.task");
-        boolean succeeded;
-        // 固定用物件端
-        try (S3ObjectStore store = new S3ObjectStore(
-                S3Clients.create(properties.s3()), properties.s3().bucket())) {
-            succeeded = switch (task) {
-                case "storage-check" -> new StorageCheck(store).run();
-                case "storage-migrate" -> migrate(store);
-                default -> throw new IllegalArgumentException("未知指令：" + task);
-            };
-        }
+        boolean succeeded = switch (task) {
+            case "mail-check" -> new MailCheck(mailer)
+                    .run(context.getEnvironment().getRequiredProperty("reader.mail-check-to"));
+            case "storage-check" -> withObjectStore(store -> new StorageCheck(store).run());
+            case "storage-migrate" -> withObjectStore(this::migrate);
+            default -> throw new IllegalArgumentException("未知指令：" + task);
+        };
         System.out.println(succeeded ? "指令完成" : "指令失敗");
         int code = succeeded ? 0 : 1;
         System.exit(SpringApplication.exit(context, () -> code));
+    }
+
+    private interface StoreTask {
+
+        boolean run(S3ObjectStore store) throws IOException;
+    }
+
+    // 固定用物件端
+    private boolean withObjectStore(StoreTask task) throws IOException {
+        try (S3ObjectStore store = new S3ObjectStore(
+                S3Clients.create(properties.s3()), properties.s3().bucket())) {
+            return task.run(store);
+        }
     }
 
     private boolean migrate(S3ObjectStore store) {
