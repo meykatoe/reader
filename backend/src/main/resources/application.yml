@@ -4,7 +4,7 @@ server:
     enabled: true
     mime-types: text/html,text/css,text/javascript,application/javascript,application/json,image/svg+xml
   tomcat:
-    # 確保回應413
+    # 超大檔回應
     max-swallow-size: -1
   servlet:
     session:
