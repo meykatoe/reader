@@ -30,7 +30,7 @@ const { current, nearby, observe, onScroll, scrollTo, keepPosition } = usePdfScr
 
 const pageCount = computed(() => pdf.value?.numPages ?? 0)
 
-// 1 代表符合寬度
+// 一為滿版寬
 const scale = computed(() => {
   const fitWidth = Math.min(Math.max(containerWidth.value - PADDING, 100), MAX_FIT_WIDTH)
   return (fitWidth / baseSize.value.width) * zoom.value

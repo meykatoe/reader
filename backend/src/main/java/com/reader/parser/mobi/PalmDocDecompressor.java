@@ -3,7 +3,7 @@ package com.reader.parser.mobi;
 import com.reader.parser.ParseException;
 import java.util.Arrays;
 
-// LZ77 解壓
+// 字典解壓
 final class PalmDocDecompressor implements Decompressor {
 
     private static final int MAX_OUTPUT = 64 * 1024;
