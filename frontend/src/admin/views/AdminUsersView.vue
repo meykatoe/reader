@@ -1,11 +1,21 @@
 <script setup>
+import { ref } from 'vue'
+import { formatDate } from '../../utils/format'
 import { deleteAdminUser, listAdminUsers } from '../api'
 import ListPager from '../components/ListPager.vue'
+import MembershipDialog from '../components/MembershipDialog.vue'
 import { usePagedList } from '../composables/usePagedList'
 import { can } from '../store'
 
-const { items, total, page, pageCount, keyword, loading, error, run } =
+const { items, total, page, pageCount, keyword, loading, error, load, run } =
   usePagedList(listAdminUsers)
+
+const editing = ref(null)
+
+function finish() {
+  editing.value = null
+  load()
+}
 
 function remove(user) {
   const answer = window.prompt(
@@ -34,8 +44,9 @@ function remove(user) {
           <th>編號</th>
           <th>用戶名稱</th>
           <th>書籍數</th>
+          <th>會員</th>
           <th>註冊時間</th>
-          <th v-if="can('USER_DELETE')">操作</th>
+          <th v-if="can('USER_MEMBERSHIP') || can('USER_DELETE')">操作</th>
         </tr>
       </thead>
       <tbody>
@@ -43,9 +54,15 @@ function remove(user) {
           <td>{{ user.id }}</td>
           <td class="wide">{{ user.username }}</td>
           <td>{{ user.bookCount }}</td>
+          <td>{{ user.member ? `至 ${formatDate(user.memberUntil)}` : '—' }}</td>
           <td>{{ new Date(user.createdAt).toLocaleString('zh-TW') }}</td>
-          <td v-if="can('USER_DELETE')">
-            <button class="button danger" @click="remove(user)">刪除</button>
+          <td v-if="can('USER_MEMBERSHIP') || can('USER_DELETE')">
+            <button v-if="can('USER_MEMBERSHIP')" class="button" @click="editing = user">
+              會員設定
+            </button>
+            <button v-if="can('USER_DELETE')" class="button danger" @click="remove(user)">
+              刪除
+            </button>
           </td>
         </tr>
       </tbody>
@@ -53,4 +70,5 @@ function remove(user) {
     <p v-if="!items.length" class="admin-empty">{{ loading ? '載入中…' : '沒有資料' }}</p>
   </div>
   <ListPager :page="page" :page-count="pageCount" :total="total" @change="page = $event" />
+  <MembershipDialog v-if="editing" :user="editing" @close="editing = null" @saved="finish" />
 </template>

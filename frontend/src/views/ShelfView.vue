@@ -3,7 +3,9 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { deleteBook, listBooks, setBookPrivacy } from '../api/books'
 import AppHeader from '../components/AppHeader.vue'
 import BookCard from '../components/shelf/BookCard.vue'
+import QuotaSummary from '../components/shelf/QuotaSummary.vue'
 import UploadDialog from '../components/shelf/UploadDialog.vue'
+import { useDownloads } from '../composables/useDownloads'
 
 const tabs = [
   { mine: false, label: '全部書籍' },
@@ -16,6 +18,7 @@ const books = ref([])
 const loading = ref(true)
 const error = ref('')
 const uploading = ref(false)
+const { quota, remaining, download } = useDownloads((message) => (error.value = message))
 
 const filtered = computed(() => {
   const text = keyword.value.trim().toLowerCase()
@@ -85,6 +88,7 @@ onMounted(load)
       <button class="button primary" @click="uploading = true">上傳書籍</button>
     </div>
 
+    <QuotaSummary v-if="quota" :quota="quota" :remaining="remaining" />
     <p v-if="error" class="error">{{ error }}</p>
     <p v-if="loading" class="hint">載入中…</p>
     <p v-else-if="!filtered.length" class="hint">目前沒有書籍</p>
@@ -93,6 +97,7 @@ onMounted(load)
         v-for="book in filtered"
         :key="book.id"
         :book="book"
+        @download="download"
         @toggle-privacy="togglePrivacy"
         @remove="remove"
       />

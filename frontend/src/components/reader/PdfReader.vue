@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import 'pdfjs-dist/legacy/web/pdf_viewer.css'
+import { HttpError } from '../../api/http'
 import { getProgress } from '../../api/reading'
 import { usePdfDocument } from '../../composables/usePdfDocument'
 import { usePdfScroll } from '../../composables/usePdfScroll'
@@ -78,7 +79,9 @@ onMounted(async () => {
     observe()
     container.value.focus()
   } catch (e) {
-    error.value = e.status ? e.message : '無法開啟 PDF'
+    // 開書額度已滿
+    if (e.status === 429) error.value = '今日可開啟的書籍已達上限，明天再試'
+    else error.value = e instanceof HttpError ? e.message : '無法開啟 PDF'
   } finally {
     loading.value = false
   }
