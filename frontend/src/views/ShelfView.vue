@@ -56,7 +56,7 @@ async function run(action) {
 const togglePrivacy = (book) => run(() => setBookPrivacy(book.id, !book.isPrivate))
 
 function remove(book) {
-  if (window.confirm(`確定刪除《${book.title}》？刪除後無法復原。`)) {
+  if (window.confirm(`確定刪除《${book.title}》？刪除後需聯絡管理員才能復原。`)) {
     run(() => deleteBook(book.id))
   }
 }
