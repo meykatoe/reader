@@ -121,14 +121,10 @@ public class Book {
         return ownerDeleted ? "已刪除用戶" : "平臺";
     }
 
-    // 公開狀態不變
+    // 僅公開書使用
     public void detachOwner() {
         this.owner = null;
         this.ownerDeleted = true;
-    }
-
-    public boolean isOwnerDeleted() {
-        return ownerDeleted;
     }
 
     public User getOwner() {
