@@ -123,8 +123,5 @@ jobs:
         run: |
           TAG="sha-${GITHUB_SHA::7}"
           scp docker-compose.prod.yml "$USER_NAME@$HOST:$TARGET/"
-          ssh "$USER_NAME@$HOST" "cd '$TARGET' \
-            && export DOCKERHUB_USERNAME='$IMAGE_OWNER' IMAGE_TAG='$TAG' \
-            && docker compose -f docker-compose.prod.yml pull \
-            && docker compose -f docker-compose.prod.yml up -d --no-build --wait --remove-orphans \
-            && sed -i '/^IMAGE_TAG=/d' .env && sed -i '\$aIMAGE_TAG=$TAG' .env"
+          ssh -o ServerAliveInterval=30 "$USER_NAME@$HOST" \
+            bash -s -- "'$TARGET'" "'$IMAGE_OWNER'" "$TAG" < deploy/remote-deploy.sh
