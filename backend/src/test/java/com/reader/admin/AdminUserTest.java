@@ -69,6 +69,32 @@ class AdminUserTest extends AdminTestSupport {
         mvc.perform(get("/api/books").session(user)).andExpect(status().isUnauthorized());
     }
 
+    @Test
+    void onlySuperAdminManagesMembership() throws Exception {
+        String name = randomName("u");
+        registerAndSignIn(name);
+        Long id = userRepository.findByUsername(name).orElseThrow().getId();
+        String path = "/api/admin/users/" + id + "/membership";
+        String future = "{\"memberUntil\":\"2099-12-31T15:59:59Z\"}";
+
+        mvc.perform(put(path).session(signIn(createAdmin(2))).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(future))
+                .andExpect(status().isForbidden());
+
+        MockHttpSession admin = signIn(createAdmin(1));
+        mvc.perform(put(path).session(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(future))
+                .andExpect(jsonPath("$.member").value(true))
+                .andExpect(jsonPath("$.memberUntil").value("2099-12-31T15:59:59Z"));
+        mvc.perform(put(path).session(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"memberUntil\":\"2000-01-01T00:00:00Z\"}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(put(path).session(admin).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content("{\"memberUntil\":null}"))
+                .andExpect(jsonPath("$.member").value(false));
+    }
+
     private MockHttpSession registerAndSignIn(String name) throws Exception {
         String body = credentials(name, "password123");
         mvc.perform(post("/api/auth/register").with(csrf())

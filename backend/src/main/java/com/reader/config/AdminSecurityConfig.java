@@ -32,6 +32,8 @@ public class AdminSecurityConfig {
                         .hasAuthority(AdminAuthority.BOOK_MANAGE.name())
                         .requestMatchers(HttpMethod.GET, "/api/admin/users")
                         .hasAuthority(AdminAuthority.USER_VIEW.name())
+                        .requestMatchers(HttpMethod.PUT, "/api/admin/users/*/membership")
+                        .hasAuthority(AdminAuthority.USER_MEMBERSHIP.name())
                         .requestMatchers(HttpMethod.DELETE, "/api/admin/users/*")
                         .hasAuthority(AdminAuthority.USER_DELETE.name())
                         // 未列出即拒絕

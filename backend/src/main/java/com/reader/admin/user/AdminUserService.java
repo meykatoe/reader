@@ -7,6 +7,7 @@ import com.reader.book.OwnerBookCount;
 import com.reader.common.ApiException;
 import com.reader.user.User;
 import com.reader.user.UserRepository;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -42,6 +43,14 @@ public class AdminUserService {
                 .collect(Collectors.toMap(OwnerBookCount::getOwnerId, OwnerBookCount::getTotal));
         return users.map(user ->
                 AdminUserResponse.of(user, counts.getOrDefault(user.getId(), 0L)));
+    }
+
+    public AdminUserResponse changeMembership(Long userId, Instant memberUntil) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> ApiException.notFound("找不到用戶"));
+        user.changeMembership(memberUntil);
+        userRepository.save(user);
+        return AdminUserResponse.of(user, bookRepository.findOwned(userId).size());
     }
 
     public void delete(Long userId) {
