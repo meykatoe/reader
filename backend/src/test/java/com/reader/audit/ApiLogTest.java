@@ -10,6 +10,8 @@ import com.reader.admin.auth.AdminRepository;
 import com.reader.common.ErrorCode;
 import com.reader.common.RequestIdFilter;
 import java.util.UUID;
+import com.reader.support.Registrations;
+import com.reader.verification.VerificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +35,9 @@ class ApiLogTest {
     private MockMvc mvc;
 
     @Autowired
+    private VerificationService verifications;
+
+    @Autowired
     private ApiLogWriter writer;
 
     @Autowired
@@ -50,7 +55,8 @@ class ApiLogTest {
     @Test
     void recordsUserCallsWithAccountAndResult() throws Exception {
         String name = name();
-        send(login("/api/auth/register", name, PASSWORD));
+        send(post("/api/auth/register").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                .content(Registrations.body(verifications, name, PASSWORD)));
         UserApiLog failed = userLog(send(login("/api/auth/login", name, "wrong-password")));
         MvcResult signedIn = send(login("/api/auth/login", name, PASSWORD));
         MockHttpSession session = (MockHttpSession) signedIn.getRequest().getSession();

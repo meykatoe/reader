@@ -9,3 +9,6 @@ reader:
   limits:
     # 測試共用位址
     registrations: 100000
+    verifications-per-ip: 100000
+    mails-per-ip: 100000
+    mails-per-day: 100000

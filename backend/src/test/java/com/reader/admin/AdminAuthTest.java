@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import com.reader.admin.auth.Admin;
+import com.reader.support.Registrations;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
@@ -39,9 +40,11 @@ class AdminAuthTest extends AdminTestSupport {
 
     @Test
     void userAndAdminSessionsAreSeparate() throws Exception {
-        String user = credentials(randomName("u"), "password123");
+        String name = randomName("u");
+        String user = credentials(name, "password123");
         mvc.perform(post("/api/auth/register").with(csrf())
-                .contentType(MediaType.APPLICATION_JSON).content(user));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(Registrations.body(verifications, name, "password123")));
         MockHttpSession userSession = (MockHttpSession) mvc.perform(post("/api/auth/login")
                         .with(csrf()).contentType(MediaType.APPLICATION_JSON).content(user))
                 .andReturn().getRequest().getSession();

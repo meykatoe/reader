@@ -30,7 +30,8 @@ public class SecurityConfig {
                                     ResultWriter resultWriter) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/register/code",
+                                "/api/auth/login").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         // 其餘為靜態頁
                         .anyRequest().permitAll())

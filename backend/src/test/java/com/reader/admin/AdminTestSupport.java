@@ -6,6 +6,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.reader.admin.auth.Admin;
 import com.reader.admin.auth.AdminRepository;
+import com.reader.verification.VerificationService;
 import java.util.UUID;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -25,6 +26,9 @@ abstract class AdminTestSupport {
 
     @Autowired
     protected MockMvc mvc;
+
+    @Autowired
+    protected VerificationService verifications;
 
     @Autowired
     protected AdminRepository adminRepository;
