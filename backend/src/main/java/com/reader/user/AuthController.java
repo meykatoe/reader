@@ -1,6 +1,7 @@
 package com.reader.user;
 
 import com.reader.common.ApiException;
+import com.reader.limit.AccountGuard;
 import com.reader.security.SessionLogin;
 import com.reader.user.dto.LoginRequest;
 import com.reader.user.dto.RegisterRequest;
@@ -30,28 +31,33 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository contextRepository;
     private final SessionLogin sessionLogin;
+    private final AccountGuard accountGuard;
 
     public AuthController(UserService userService,
                           AuthenticationManager authenticationManager,
                           SecurityContextRepository contextRepository,
-                          SessionLogin sessionLogin) {
+                          SessionLogin sessionLogin,
+                          AccountGuard accountGuard) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
         this.contextRepository = contextRepository;
         this.sessionLogin = sessionLogin;
+        this.accountGuard = accountGuard;
     }
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public void register(@Valid @RequestBody RegisterRequest request) {
-        userService.register(request.username(), request.password());
+    public void register(@Valid @RequestBody RegisterRequest body, HttpServletRequest request) {
+        accountGuard.register(request.getRemoteAddr(),
+                () -> userService.register(body.username(), body.password()));
     }
 
     @PostMapping("/login")
     public UserResponse login(@Valid @RequestBody LoginRequest body,
                               HttpServletRequest request,
                               HttpServletResponse response) {
-        Authentication authentication = authenticate(body);
+        Authentication authentication = accountGuard.login(
+                "user", body.username(), request.getRemoteAddr(), () -> authenticate(body));
         sessionLogin.establish(authentication, contextRepository, request, response);
 
         return toResponse((AuthUser) authentication.getPrincipal());

@@ -1,5 +1,7 @@
 server:
   port: 8080
+  # 讀取真實來源
+  forward-headers-strategy: native
   compression:
     enabled: true
     mime-types: text/html,text/css,text/javascript,application/javascript,application/json,image/svg+xml
@@ -28,6 +30,13 @@ spring:
     hibernate:
       ddl-auto: validate
 reader:
+  limits:
+    login-attempts: ${LIMIT_LOGIN_ATTEMPTS:5}
+    registrations: ${LIMIT_REGISTRATIONS:3}
+    member-downloads: ${LIMIT_MEMBER_DOWNLOADS:10}
+    free-downloads: ${LIMIT_FREE_DOWNLOADS:1}
+    daily-read-books: ${LIMIT_DAILY_READ_BOOKS:30}
+    chapters-per-minute: ${LIMIT_CHAPTERS_PER_MINUTE:60}
   storage:
     root: ${STORAGE_ROOT:../data}
     # 本機或物件

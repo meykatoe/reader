@@ -1,6 +1,7 @@
 package com.reader.admin.auth;
 
 import com.reader.common.ApiException;
+import com.reader.limit.AccountGuard;
 import com.reader.security.SessionLogin;
 import com.reader.user.dto.LoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,11 +31,13 @@ public class AdminAuthController {
     private final AuthenticationProvider provider;
     private final AdminSession adminSession;
     private final SessionLogin sessionLogin;
+    private final AccountGuard accountGuard;
 
     public AdminAuthController(AdminRepository adminRepository,
                                PasswordEncoder passwordEncoder,
                                AdminSession adminSession,
-                               SessionLogin sessionLogin) {
+                               SessionLogin sessionLogin,
+                               AccountGuard accountGuard) {
         DaoAuthenticationProvider dao = new DaoAuthenticationProvider(
                 username -> adminRepository.findByUsername(username)
                         .flatMap(AdminPrincipal::from)
@@ -43,13 +46,15 @@ public class AdminAuthController {
         this.provider = dao;
         this.adminSession = adminSession;
         this.sessionLogin = sessionLogin;
+        this.accountGuard = accountGuard;
     }
 
     @PostMapping("/login")
     public AdminResponse login(@Valid @RequestBody LoginRequest body,
                                HttpServletRequest request,
                                HttpServletResponse response) {
-        Authentication authentication = authenticate(body);
+        Authentication authentication = accountGuard.login(
+                "admin", body.username(), request.getRemoteAddr(), () -> authenticate(body));
         sessionLogin.establish(authentication, adminSession.repository(), request, response);
         return AdminResponse.of((AdminPrincipal) authentication.getPrincipal());
     }

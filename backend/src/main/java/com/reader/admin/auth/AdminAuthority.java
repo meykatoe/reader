@@ -4,5 +4,6 @@ package com.reader.admin.auth;
 public enum AdminAuthority {
     BOOK_MANAGE,
     USER_VIEW,
+    USER_MEMBERSHIP,
     USER_DELETE
 }

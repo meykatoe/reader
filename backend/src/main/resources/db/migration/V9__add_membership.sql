@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN member_until DATETIME(6) NULL;

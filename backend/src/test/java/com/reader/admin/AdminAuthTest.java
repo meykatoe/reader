@@ -18,7 +18,7 @@ class AdminAuthTest extends AdminTestSupport {
         MockHttpSession superSession = signIn(createAdmin(1));
         mvc.perform(get("/api/admin/auth/me").session(superSession))
                 .andExpect(jsonPath("$.permission").value(1))
-                .andExpect(jsonPath("$.authorities.length()").value(3));
+                .andExpect(jsonPath("$.authorities.length()").value(4));
 
         mvc.perform(get("/api/admin/auth/me").session(signIn(createAdmin(2))))
                 .andExpect(jsonPath("$.authorities.length()").value(1))
