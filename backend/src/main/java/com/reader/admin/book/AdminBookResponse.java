@@ -12,6 +12,7 @@ public record AdminBookResponse(
         boolean isPrivate,
         Long ownerId,
         String ownerName,
+        boolean ownerDeleted,
         long fileSize,
         Instant createdAt) {
 
@@ -24,6 +25,7 @@ public record AdminBookResponse(
                 book.isPrivateBook(),
                 book.getOwner() == null ? null : book.getOwner().getId(),
                 book.ownerName(),
+                book.isOwnerDeleted(),
                 book.getFileSize(),
                 book.getCreatedAt());
     }
