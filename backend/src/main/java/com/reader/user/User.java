@@ -19,6 +19,10 @@ public class User {
     @Column(nullable = false, unique = true, length = 32)
     private String username;
 
+    // 舊帳號為空值
+    @Column(unique = true, length = 254)
+    private String email;
+
     @Column(name = "password_hash", nullable = false, length = 100)
     private String passwordHash;
 
@@ -36,6 +40,19 @@ public class User {
         this.username = username;
         this.passwordHash = passwordHash;
         this.createdAt = Instant.now();
+    }
+
+    public User(String username, String passwordHash, String email) {
+        this(username, passwordHash);
+        this.email = email;
+    }
+
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
+    public String getEmail() {
+        return email;
     }
 
     public boolean isMember(Instant now) {

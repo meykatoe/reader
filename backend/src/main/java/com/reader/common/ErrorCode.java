@@ -44,6 +44,25 @@ public enum ErrorCode {
     // 安全驗證錯
     CSRF_INVALID(20011, HttpStatus.FORBIDDEN, "Missing or invalid CSRF token"),
 
+    // 缺少信箱
+    EMAIL_REQUIRED(20012, HttpStatus.BAD_REQUEST, "Email is required"),
+    // 信箱格式錯
+    EMAIL_INVALID(20013, HttpStatus.BAD_REQUEST, "Invalid email address"),
+    // 缺少驗證碼
+    CODE_REQUIRED(20014, HttpStatus.BAD_REQUEST, "Verification code is required"),
+    // 驗證無效
+    VERIFICATION_INVALID(20015, HttpStatus.BAD_REQUEST,
+            "Verification is invalid or expired"),
+    // 寄信過頻
+    MAIL_RATE_LIMITED(20016, HttpStatus.TOO_MANY_REQUESTS, "Too many emails requested"),
+    // 信箱已使用
+    EMAIL_TAKEN(20017, HttpStatus.CONFLICT, "Email already registered"),
+    // 驗證過頻
+    VERIFY_LIMITED(20018, HttpStatus.TOO_MANY_REQUESTS, "Too many verification attempts"),
+    // 重設憑證錯
+    RESET_PROOF_REQUIRED(20019, HttpStatus.BAD_REQUEST,
+            "Provide either a reset token or an email with a code"),
+
     // 查無書籍
     BOOK_NOT_FOUND(30001, HttpStatus.NOT_FOUND, "Book not found"),
     // 非擁有者
@@ -108,7 +127,9 @@ public enum ErrorCode {
     // 系統錯誤
     INTERNAL_ERROR(90000, HttpStatus.INTERNAL_SERVER_ERROR, "Internal server error"),
     // 儲存故障
-    STORAGE_UNAVAILABLE(90001, HttpStatus.SERVICE_UNAVAILABLE, "Storage service unavailable");
+    STORAGE_UNAVAILABLE(90001, HttpStatus.SERVICE_UNAVAILABLE, "Storage service unavailable"),
+    // 郵件故障
+    MAIL_UNAVAILABLE(90002, HttpStatus.SERVICE_UNAVAILABLE, "Mail service unavailable");
 
     private final int code;
     private final HttpStatus status;

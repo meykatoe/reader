@@ -34,10 +34,21 @@ spring:
     hibernate:
       ddl-auto: validate
 reader:
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    from: ${MAIL_FROM:}
+    # 加密方式
+    security: ${MAIL_SECURITY:starttls}
+    # 連結網址
+    public-url: ${PUBLIC_URL:}
   logs:
     user-retention-days: ${LOG_USER_RETENTION_DAYS:90}
     admin-retention-days: ${LOG_ADMIN_RETENTION_DAYS:365}
   limits:
+    mails-per-day: ${LIMIT_MAILS_PER_DAY:200}
     login-attempts: ${LIMIT_LOGIN_ATTEMPTS:5}
     registrations: ${LIMIT_REGISTRATIONS:3}
     member-downloads: ${LIMIT_MEMBER_DOWNLOADS:10}

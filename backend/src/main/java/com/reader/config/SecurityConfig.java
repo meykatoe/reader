@@ -3,7 +3,7 @@ package com.reader.config;
 import com.reader.audit.AccountCaptureFilter;
 import com.reader.common.ResultWriter;
 import com.reader.security.SecurityErrorHandlers;
-import com.reader.user.DeletedUserFilter;
+import com.reader.user.StaleSessionFilter;
 import com.reader.user.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -30,13 +30,15 @@ public class SecurityConfig {
                                     ResultWriter resultWriter) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/auth/register", "/api/auth/register/code",
+                                "/api/auth/login", "/api/auth/password/forgot",
+                                "/api/auth/password/reset").permitAll()
                         .requestMatchers("/api/**").authenticated()
                         // 其餘為靜態頁
                         .anyRequest().permitAll())
                 .csrf(csrf -> csrf.spa())
                 .addFilterAfter(new AccountCaptureFilter(), SecurityContextHolderFilter.class)
-                .addFilterAfter(new DeletedUserFilter(userRepository), AccountCaptureFilter.class)
+                .addFilterAfter(new StaleSessionFilter(userRepository), AccountCaptureFilter.class)
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(errors.unauthenticated())

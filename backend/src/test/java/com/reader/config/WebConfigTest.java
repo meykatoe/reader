@@ -24,7 +24,7 @@ class WebConfigTest {
     private MockMvc mvc;
 
     @ParameterizedTest
-    @ValueSource(strings = {"/login", "/books/12", "/admin", "/admin/login", "/admin/books", "/admin/users"})
+    @ValueSource(strings = {"/login", "/forgot-password", "/reset-password", "/books/12", "/admin", "/admin/login", "/admin/books", "/admin/users"})
     void forwardsClientRoutes(String path) throws Exception {
         mvc.perform(get(path))
                 .andExpect(status().isOk())

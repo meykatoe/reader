@@ -2,6 +2,7 @@ package com.reader.common;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.util.Comparator;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,9 +40,10 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Result<Object>> handleInvalid(MethodArgumentNotValidException ex,
                                                         HttpServletRequest request) {
+        // 取最小碼
         ErrorCode code = ex.getBindingResult().getFieldErrors().stream()
-                .findFirst()
-                .flatMap(error -> ErrorCode.byName(error.getDefaultMessage()))
+                .flatMap(error -> ErrorCode.byName(error.getDefaultMessage()).stream())
+                .min(Comparator.comparingInt(ErrorCode::code))
                 .orElse(ErrorCode.INVALID_PARAMETER);
         return respond(request, code, null, ex);
     }

@@ -18,9 +18,17 @@ public class AccountGuard {
         this.limits = limits;
     }
 
+    public void unlock(String scope, String username, String ip) {
+        limiter.reset(loginKey(scope, username, ip));
+    }
+
+    private static String loginKey(String scope, String username, String ip) {
+        return "login|" + scope + "|" + username.toLowerCase(Locale.ROOT) + "|" + ip;
+    }
+
     // 成功才歸零
     public <T> T login(String scope, String username, String ip, Supplier<T> attempt) {
-        String key = "login|" + scope + "|" + username.toLowerCase(Locale.ROOT) + "|" + ip;
+        String key = loginKey(scope, username, ip);
         if (!limiter.tryAcquire(key, limits.loginAttempts(), limits.loginWindow())) {
             throw new ApiException(ErrorCode.LOGIN_LOCKED);
         }
