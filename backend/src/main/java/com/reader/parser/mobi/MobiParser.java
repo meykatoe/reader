@@ -1,6 +1,7 @@
 package com.reader.parser.mobi;
 
 import com.reader.book.BookFormat;
+import com.reader.common.ErrorCode;
 import com.reader.parser.AssetCollector;
 import com.reader.parser.BookParser;
 import com.reader.parser.ContentSanitizer;
@@ -46,7 +47,7 @@ public class MobiParser implements BookParser {
 
         List<ParsedChapter> chapters = readChapters(document, assets);
         if (chapters.isEmpty()) {
-            throw new ParseException("MOBI 內沒有可閱讀的內容");
+            throw new ParseException(ErrorCode.BOOK_NO_CONTENT);
         }
         return new ParsedBook(header.title(), header.author(), chapters, assets.assets(), coverName, null);
     }

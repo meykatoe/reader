@@ -1,12 +1,12 @@
 package com.reader.storage;
 
 import com.reader.common.ApiException;
-import org.springframework.http.HttpStatus;
+import com.reader.common.ErrorCode;
+import java.util.Map;
 
 public class StorageException extends ApiException {
 
     public StorageException(Throwable cause) {
-        super(HttpStatus.SERVICE_UNAVAILABLE, "儲存服務暫時無法使用");
-        initCause(cause);
+        super(ErrorCode.STORAGE_UNAVAILABLE, Map.of(), cause);
     }
 }

@@ -1,29 +1,32 @@
 package com.reader.common;
 
-import org.springframework.http.HttpStatus;
+import java.util.Map;
 
 public class ApiException extends RuntimeException {
 
-    private final HttpStatus status;
+    private final ErrorCode code;
+    private final transient Map<String, Object> data;
 
-    public ApiException(HttpStatus status, String message) {
-        super(message);
-        this.status = status;
+    public ApiException(ErrorCode code) {
+        this(code, Map.of(), null);
     }
 
-    public static ApiException badRequest(String message) {
-        return new ApiException(HttpStatus.BAD_REQUEST, message);
+    // 附帶畫面資料
+    public ApiException(ErrorCode code, Map<String, Object> data) {
+        this(code, data, null);
     }
 
-    public static ApiException notFound(String message) {
-        return new ApiException(HttpStatus.NOT_FOUND, message);
+    protected ApiException(ErrorCode code, Map<String, Object> data, Throwable cause) {
+        super(code.message(), cause);
+        this.code = code;
+        this.data = data;
     }
 
-    public static ApiException conflict(String message) {
-        return new ApiException(HttpStatus.CONFLICT, message);
+    public ErrorCode code() {
+        return code;
     }
 
-    public HttpStatus status() {
-        return status;
+    public Map<String, Object> data() {
+        return data;
     }
 }

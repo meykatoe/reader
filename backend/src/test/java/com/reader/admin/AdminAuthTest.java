@@ -17,12 +17,12 @@ class AdminAuthTest extends AdminTestSupport {
     void reportsPermissionAndAuthorities() throws Exception {
         MockHttpSession superSession = signIn(createAdmin(1));
         mvc.perform(get("/api/admin/auth/me").session(superSession))
-                .andExpect(jsonPath("$.permission").value(1))
-                .andExpect(jsonPath("$.authorities.length()").value(4));
+                .andExpect(jsonPath("$.data.permission").value(1))
+                .andExpect(jsonPath("$.data.authorities.length()").value(4));
 
         mvc.perform(get("/api/admin/auth/me").session(signIn(createAdmin(2))))
-                .andExpect(jsonPath("$.authorities.length()").value(1))
-                .andExpect(jsonPath("$.authorities[0]").value("BOOK_MANAGE"));
+                .andExpect(jsonPath("$.data.authorities.length()").value(1))
+                .andExpect(jsonPath("$.data.authorities[0]").value("BOOK_MANAGE"));
     }
 
     @Test
@@ -58,7 +58,7 @@ class AdminAuthTest extends AdminTestSupport {
         MockHttpSession session = signIn(createAdmin(1));
 
         mvc.perform(post("/api/admin/auth/logout").session(session).with(csrf()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         mvc.perform(get("/api/admin/auth/me").session(session))
                 .andExpect(status().isUnauthorized());
@@ -72,7 +72,7 @@ class AdminAuthTest extends AdminTestSupport {
         admin.changePermission(2);
         adminRepository.save(admin);
         mvc.perform(get("/api/admin/auth/me").session(session))
-                .andExpect(jsonPath("$.permission").value(2));
+                .andExpect(jsonPath("$.data.permission").value(2));
 
         adminRepository.delete(admin);
         mvc.perform(get("/api/admin/auth/me").session(session))

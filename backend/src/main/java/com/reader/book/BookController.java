@@ -2,6 +2,7 @@ package com.reader.book;
 
 import com.reader.book.dto.BookResponse;
 import com.reader.book.dto.VisibilityRequest;
+import com.reader.common.Result;
 import com.reader.user.AuthUser;
 import jakarta.validation.Valid;
 import java.util.List;
@@ -32,38 +33,39 @@ public class BookController {
     }
 
     @GetMapping
-    public List<BookResponse> list(@AuthenticationPrincipal AuthUser user,
-                                   @RequestParam(defaultValue = "false") boolean mine) {
-        return bookService.list(user.id(), mine).stream()
+    public Result<List<BookResponse>> list(@AuthenticationPrincipal AuthUser user,
+                                           @RequestParam(defaultValue = "false") boolean mine) {
+        return Result.ok(bookService.list(user.id(), mine).stream()
                 .map(book -> BookResponse.of(book, user.id()))
-                .toList();
+                .toList());
     }
 
     @GetMapping("/{id}")
-    public BookResponse get(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
-        return BookResponse.of(bookService.getVisible(id, user.id()), user.id());
+    public Result<BookResponse> get(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
+        return Result.ok(BookResponse.of(bookService.getVisible(id, user.id()), user.id()));
     }
 
     @PatchMapping("/{id}")
-    public BookResponse update(@AuthenticationPrincipal AuthUser user,
-                               @PathVariable Long id,
-                               @Valid @RequestBody VisibilityRequest request) {
+    public Result<BookResponse> update(@AuthenticationPrincipal AuthUser user,
+                                       @PathVariable Long id,
+                                       @Valid @RequestBody VisibilityRequest request) {
         Book book = bookService.changeVisibility(id, user.id(), request.isPrivate());
-        return BookResponse.of(book, user.id());
+        return Result.ok(BookResponse.of(book, user.id()));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
+    public Result<Void> delete(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
         bookService.delete(id, user.id());
+        return Result.ok();
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public BookResponse upload(@AuthenticationPrincipal AuthUser user,
-                               @RequestPart("file") MultipartFile file,
-                               @RequestParam(required = false) String title,
-                               @RequestParam(defaultValue = "false") boolean isPrivate) {
-        return BookResponse.of(bookService.upload(user.id(), file, title, isPrivate), user.id());
+    public Result<BookResponse> upload(@AuthenticationPrincipal AuthUser user,
+                                       @RequestPart("file") MultipartFile file,
+                                       @RequestParam(required = false) String title,
+                                       @RequestParam(defaultValue = "false") boolean isPrivate) {
+        Book book = bookService.upload(user.id(), file, title, isPrivate);
+        return Result.ok(BookResponse.of(book, user.id()));
     }
 }

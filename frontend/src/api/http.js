@@ -1,7 +1,11 @@
+import { describeError } from './errorMessages'
+
 export class HttpError extends Error {
-  constructor(status, message) {
+  constructor(status, message, code, requestId) {
     super(message)
     this.status = status
+    this.code = code
+    this.requestId = requestId
   }
 }
 
@@ -38,14 +42,19 @@ export async function request(path, { method = 'GET', body, keepalive = false } 
 
   const response = await fetch(`/api${path}`, { method, headers, body: payload, keepalive })
   const text = await response.text()
-  const data = text && response.headers.get('content-type')?.includes('json') ? JSON.parse(text) : null
+  const result = text && response.headers.get('content-type')?.includes('json') ? JSON.parse(text) : null
 
   if (!response.ok) {
     // 登入除外
     if (response.status === 401 && !/^(\/admin)?\/auth\//.test(path)) {
       unauthorizedHandler(path)
     }
-    throw new HttpError(response.status, data?.message || `請求失敗（${response.status}）`)
+    throw new HttpError(
+      response.status,
+      describeError(result, response.status),
+      result?.code,
+      result?.requestId,
+    )
   }
-  return data
+  return result?.data ?? null
 }

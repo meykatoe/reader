@@ -3,6 +3,7 @@ package com.reader.reading;
 import com.reader.book.Book;
 import com.reader.book.BookService;
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import com.reader.content.Chapter;
 import com.reader.content.ChapterRepository;
 import com.reader.content.ChapterSummary;
@@ -41,7 +42,7 @@ public class ReadingService {
     public ChapterResponse getChapter(Long bookId, int index, Long userId) {
         readGuard.readChapter(bookService.getVisible(bookId, userId), userId);
         Chapter chapter = chapterRepository.findByBookIdAndIndex(bookId, index)
-                .orElseThrow(() -> ApiException.notFound("找不到章節"));
+                .orElseThrow(() -> new ApiException(ErrorCode.CHAPTER_NOT_FOUND));
         // 換成實際網址
         String html = chapter.getContent()
                 .replace(ASSET_SOURCE, "src=\"/api/books/" + bookId + "/assets/");
@@ -58,7 +59,7 @@ public class ReadingService {
     public void saveProgress(Long bookId, Long userId, ProgressDto update) {
         Book book = bookService.getVisible(bookId, userId);
         if (update.location() >= locationCount(book)) {
-            throw ApiException.badRequest("位置超出範圍");
+            throw new ApiException(ErrorCode.POSITION_OUT_OF_RANGE);
         }
         ReadingProgress progress = progressRepository.findByUserIdAndBookId(userId, bookId)
                 .orElseGet(() -> new ReadingProgress(userId, bookId));

@@ -1,6 +1,7 @@
 package com.reader.book;
 
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParsedBook;
 import com.reader.parser.ParserService;
 import com.reader.storage.BookStorage;
@@ -9,7 +10,6 @@ import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
@@ -47,7 +47,7 @@ public class BookService {
     public Book getVisible(Long bookId, Long userId) {
         return bookRepository.findWithOwner(bookId)
                 .filter(book -> book.isVisibleTo(userId))
-                .orElseThrow(() -> ApiException.notFound("找不到書籍"));
+                .orElseThrow(() -> new ApiException(ErrorCode.BOOK_NOT_FOUND));
     }
 
     public Book changeVisibility(Long bookId, Long userId, boolean privateBook) {
@@ -59,7 +59,7 @@ public class BookService {
 
     public Book get(Long bookId) {
         return bookRepository.findWithOwner(bookId)
-                .orElseThrow(() -> ApiException.notFound("找不到書籍"));
+                .orElseThrow(() -> new ApiException(ErrorCode.BOOK_NOT_FOUND));
     }
 
     public void delete(Long bookId, Long userId) {
@@ -84,7 +84,7 @@ public class BookService {
     private Book getOwned(Long bookId, Long userId) {
         Book book = getVisible(bookId, userId);
         if (!book.isOwnedBy(userId)) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "僅擁有者可執行此操作");
+            throw new ApiException(ErrorCode.BOOK_NOT_OWNER);
         }
         return book;
     }
@@ -92,7 +92,7 @@ public class BookService {
     // 空值為平臺
     public Book upload(Long ownerId, MultipartFile file, String title, boolean privateBook) {
         if (file.isEmpty()) {
-            throw ApiException.badRequest("檔案內容為空");
+            throw new ApiException(ErrorCode.FILE_EMPTY);
         }
         BookFormat format = BookFormat.fromFilename(file.getOriginalFilename());
         String key = UUID.randomUUID().toString();

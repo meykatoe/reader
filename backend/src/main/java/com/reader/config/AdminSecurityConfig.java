@@ -4,15 +4,14 @@ import com.reader.admin.auth.AdminAuthority;
 import com.reader.admin.auth.AdminRefreshFilter;
 import com.reader.admin.auth.AdminRepository;
 import com.reader.admin.auth.AdminSession;
+import com.reader.security.SecurityErrorHandlers;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpMethod;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 
 @Configuration
@@ -22,7 +21,8 @@ public class AdminSecurityConfig {
     @Order(1)
     SecurityFilterChain adminFilterChain(HttpSecurity http,
                                          AdminSession adminSession,
-                                         AdminRepository adminRepository) throws Exception {
+                                         AdminRepository adminRepository,
+                                         SecurityErrorHandlers errors) throws Exception {
         return http
                 .securityMatcher("/api/admin/**")
                 .authorizeHttpRequests(auth -> auth
@@ -42,7 +42,8 @@ public class AdminSecurityConfig {
                 .securityContext(context -> context.securityContextRepository(adminSession.repository()))
                 .addFilterAfter(new AdminRefreshFilter(adminRepository), SecurityContextHolderFilter.class)
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                        .authenticationEntryPoint(errors.unauthenticated())
+                        .accessDeniedHandler(errors.denied()))
                 .logout(AbstractHttpConfigurer::disable)
                 .requestCache(AbstractHttpConfigurer::disable)
                 .build();

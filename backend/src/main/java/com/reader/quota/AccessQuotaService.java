@@ -1,14 +1,16 @@
 package com.reader.quota;
 
 import com.reader.book.Book;
+import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import com.reader.limit.LimitProperties;
-import com.reader.limit.TooManyRequestsException;
 import com.reader.user.User;
 import com.reader.user.UserRepository;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.TransactionDefinition;
@@ -92,9 +94,10 @@ public class AccessQuotaService {
         return LocalDate.ofInstant(clock.instant(), limits.zone());
     }
 
-    private static TooManyRequestsException exceeded(AccessKind kind, int limit) {
-        String action = kind == AccessKind.DOWNLOAD ? "下載" : "開啟";
-        return new TooManyRequestsException(
-                "今日可" + action + "的書籍已達上限（" + limit + " 本），明天再試");
+    private static ApiException exceeded(AccessKind kind, int limit) {
+        ErrorCode code = kind == AccessKind.DOWNLOAD
+                ? ErrorCode.DOWNLOAD_QUOTA_EXCEEDED
+                : ErrorCode.READ_QUOTA_EXCEEDED;
+        return new ApiException(code, Map.of("limit", limit));
     }
 }

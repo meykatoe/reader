@@ -1,5 +1,6 @@
 package com.reader.parser.mobi;
 
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParseException;
 import java.util.Arrays;
 
@@ -13,7 +14,7 @@ final class PalmDatabase {
 
     PalmDatabase(byte[] data) {
         if (data.length < HEADER_SIZE || !Bytes.startsWith(data, 60, "BOOKMOBI")) {
-            throw new ParseException("不是有效的 MOBI 檔案");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         this.data = data;
         this.offsets = new int[Bytes.u16(data, 76) + 1];
@@ -30,7 +31,7 @@ final class PalmDatabase {
     byte[] record(int index) {
         if (index < 0 || index >= size()
                 || offsets[index] > offsets[index + 1] || offsets[index + 1] > data.length) {
-            throw new ParseException("MOBI 結構損毀");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         return Arrays.copyOfRange(data, offsets[index], offsets[index + 1]);
     }

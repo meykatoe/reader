@@ -1,6 +1,7 @@
 package com.reader.book;
 
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -16,6 +17,6 @@ public enum BookFormat {
         return Arrays.stream(values())
                 .filter(format -> lower.endsWith("." + format.extension()))
                 .findFirst()
-                .orElseThrow(() -> ApiException.badRequest("僅支援 EPUB、TXT、PDF、MOBI 格式"));
+                .orElseThrow(() -> new ApiException(ErrorCode.FORMAT_UNSUPPORTED));
     }
 }

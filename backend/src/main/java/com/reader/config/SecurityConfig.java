@@ -1,19 +1,18 @@
 package com.reader.config;
 
+import com.reader.common.ResultWriter;
+import com.reader.security.SecurityErrorHandlers;
 import com.reader.user.DeletedUserFilter;
 import com.reader.user.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
-import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
@@ -25,7 +24,9 @@ public class SecurityConfig {
     @Order(2)
     SecurityFilterChain filterChain(HttpSecurity http,
                                     SecurityContextRepository contextRepository,
-                                    UserRepository userRepository) throws Exception {
+                                    UserRepository userRepository,
+                                    SecurityErrorHandlers errors,
+                                    ResultWriter resultWriter) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
@@ -36,10 +37,12 @@ public class SecurityConfig {
                 .addFilterAfter(new DeletedUserFilter(userRepository), SecurityContextHolderFilter.class)
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .exceptionHandling(handling -> handling
-                        .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
+                        .authenticationEntryPoint(errors.unauthenticated())
+                        .accessDeniedHandler(errors.denied()))
                 .logout(logout -> logout
                         .logoutUrl("/api/auth/logout")
-                        .logoutSuccessHandler(new HttpStatusReturningLogoutSuccessHandler(HttpStatus.NO_CONTENT)))
+                        .logoutSuccessHandler((request, response, authentication) ->
+                                resultWriter.success(response)))
                 .build();
     }
 

@@ -14,6 +14,10 @@ server:
       cookie:
         http-only: true
         same-site: lax
+logging:
+  pattern:
+    # 附上請求編號
+    level: "%5p [%X{requestId:-}]"
 spring:
   application:
     name: reader
