@@ -42,7 +42,7 @@ public class EpubParser implements BookParser {
             if (chapters.isEmpty()) {
                 throw new ParseException("EPUB 內沒有可閱讀的內容");
             }
-            return new ParsedBook(pack.title(), pack.author(), chapters, assets.assets(), coverName);
+            return new ParsedBook(pack.title(), pack.author(), chapters, assets.assets(), coverName, null);
         }
     }
 

@@ -14,6 +14,7 @@ public record BookResponse(
         String ownerName,
         long fileSize,
         boolean hasCover,
+        Integer pageCount,
         Instant createdAt) {
 
     public static BookResponse of(Book book, Long viewerId) {
@@ -27,6 +28,7 @@ public record BookResponse(
                 book.getOwner().getUsername(),
                 book.getFileSize(),
                 book.getCoverName() != null,
+                book.getPageCount(),
                 book.getCreatedAt());
     }
 }

@@ -86,6 +86,7 @@ public class BookService {
                     key,
                     file.getSize());
             book.assignCover(parsed.coverName());
+            book.assignPageCount(parsed.pageCount());
             fileStorage.saveAssets(key, parsed.assets());
             Long id = bookImporter.save(book, parsed.chapters());
             return bookRepository.findWithOwner(id).orElseThrow();

@@ -51,6 +51,9 @@ public class Book {
     @Column(name = "cover_name", length = 64)
     private String coverName;
 
+    @Column(name = "page_count")
+    private Integer pageCount;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -83,6 +86,14 @@ public class Book {
 
     public void assignCover(String coverName) {
         this.coverName = coverName;
+    }
+
+    public void assignPageCount(Integer pageCount) {
+        this.pageCount = pageCount;
+    }
+
+    public Integer getPageCount() {
+        return pageCount;
     }
 
     public String getCoverName() {

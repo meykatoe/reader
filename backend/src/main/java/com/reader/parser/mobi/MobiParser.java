@@ -48,7 +48,7 @@ public class MobiParser implements BookParser {
         if (chapters.isEmpty()) {
             throw new ParseException("MOBI 內沒有可閱讀的內容");
         }
-        return new ParsedBook(header.title(), header.author(), chapters, assets.assets(), coverName);
+        return new ParsedBook(header.title(), header.author(), chapters, assets.assets(), coverName, null);
     }
 
     private List<ParsedChapter> readChapters(MobiDocument document, AssetCollector assets) {
