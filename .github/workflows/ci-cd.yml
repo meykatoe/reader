@@ -67,13 +67,10 @@ jobs:
         run: docker compose -f docker-compose.prod.yml logs --tail=200
 
   publish:
-    name: 上傳映像 (${{ matrix.app }})
+    name: 上傳映像
     needs: smoke
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        app: [backend, frontend]
     steps:
       - uses: actions/checkout@v7
       - uses: docker/setup-buildx-action@v4
@@ -84,7 +81,7 @@ jobs:
       - id: meta
         uses: docker/metadata-action@v6
         with:
-          images: ${{ vars.DOCKERHUB_USERNAME }}/reader-${{ matrix.app }}
+          images: ${{ vars.DOCKERHUB_USERNAME }}/reader
           flavor: latest=false
           tags: |
             type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
@@ -93,12 +90,12 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
       - uses: docker/build-push-action@v7
         with:
-          context: ${{ matrix.app }}
+          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha,scope=${{ matrix.app }}
-          cache-to: type=gha,scope=${{ matrix.app }},mode=max
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
   deploy:
     name: 更新伺服器
@@ -129,5 +126,5 @@ jobs:
           ssh "$USER_NAME@$HOST" "cd '$TARGET' \
             && export DOCKERHUB_USERNAME='$IMAGE_OWNER' IMAGE_TAG='$TAG' \
             && docker compose -f docker-compose.prod.yml pull \
-            && docker compose -f docker-compose.prod.yml up -d --no-build --wait \
+            && docker compose -f docker-compose.prod.yml up -d --no-build --wait --remove-orphans \
             && sed -i '/^IMAGE_TAG=/d' .env && sed -i '\$aIMAGE_TAG=$TAG' .env"

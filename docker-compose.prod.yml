@@ -18,9 +18,9 @@ services:
       interval: 5s
       retries: 30
 
-  backend:
-    image: ${DOCKERHUB_USERNAME:-local}/reader-backend:${IMAGE_TAG:-latest}
-    build: ./backend
+  reader:
+    image: ${DOCKERHUB_USERNAME:-local}/reader:${IMAGE_TAG:-latest}
+    build: .
     restart: unless-stopped
     environment:
       DB_URL: jdbc:mysql://mysql:3306/reader?allowPublicKeyRetrieval=true&useSSL=false
@@ -28,20 +28,12 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       # 安全連線用
       SERVER_SERVLET_SESSION_COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    ports:
+      - "${WEB_PORT:-80}:8080"
     volumes:
       - book-data:/data
     depends_on:
       mysql:
-        condition: service_healthy
-
-  frontend:
-    image: ${DOCKERHUB_USERNAME:-local}/reader-frontend:${IMAGE_TAG:-latest}
-    build: ./frontend
-    restart: unless-stopped
-    ports:
-      - "${WEB_PORT:-80}:80"
-    depends_on:
-      backend:
         condition: service_healthy
 
 volumes:
