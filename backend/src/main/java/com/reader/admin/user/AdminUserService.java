@@ -2,14 +2,12 @@ package com.reader.admin.user;
 
 import com.reader.book.Book;
 import com.reader.book.BookRepository;
-import com.reader.book.BookService;
 import com.reader.book.OwnerBookCount;
 import com.reader.common.ApiException;
 import com.reader.common.ErrorCode;
 import com.reader.user.User;
 import com.reader.user.UserRepository;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -23,16 +21,13 @@ public class AdminUserService {
 
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
-    private final BookService bookService;
     private final TransactionTemplate transaction;
 
     public AdminUserService(UserRepository userRepository,
                             BookRepository bookRepository,
-                            BookService bookService,
                             TransactionTemplate transaction) {
         this.userRepository = userRepository;
         this.bookRepository = bookRepository;
-        this.bookService = bookService;
         this.transaction = transaction;
     }
 
@@ -54,22 +49,16 @@ public class AdminUserService {
         return AdminUserResponse.of(user, bookRepository.findOwned(userId).size());
     }
 
+    // 書籍保留不刪
     public void delete(Long userId) {
-        List<String> storageKeys = deleteRecords(userId);
-        // 提交後刪檔
-        storageKeys.forEach(bookService::discardFiles);
-    }
-
-    private List<String> deleteRecords(Long userId) {
         try {
-            return transaction.execute(status -> {
+            transaction.executeWithoutResult(status -> {
                 User user = userRepository.findById(userId)
                         .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-                List<Book> books = bookRepository.findOwned(userId);
-                bookRepository.deleteAll(books);
+                bookRepository.findOwned(userId).forEach(Book::detachOwner);
+                // 先解除關聯
                 bookRepository.flush();
                 userRepository.delete(user);
-                return books.stream().map(Book::getStorageKey).toList();
             });
         } catch (DataIntegrityViolationException ex) {
             // 同時有上傳

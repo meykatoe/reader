@@ -10,11 +10,13 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.reader.book.Book;
 import com.reader.book.BookRepository;
 import com.reader.content.ChapterRepository;
 import com.reader.support.Registrations;
 import com.reader.user.UserRepository;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
@@ -49,25 +51,52 @@ class AdminUserTest extends AdminTestSupport {
     }
 
     @Test
-    void superAdminDeletesUserWithBooks() throws Exception {
+    void deletingUserKeepsBooks() throws Exception {
         MockHttpSession admin = signIn(createAdmin(1));
         String name = randomName("u");
         MockHttpSession user = registerAndSignIn(name);
-        upload(user);
+        upload(user, "公開作品", false);
+        upload(user, "私密筆記", true);
         Long id = userRepository.findByUsername(name).orElseThrow().getId();
-        Long bookId = bookRepository.findOwned(id).getFirst().getId();
+        List<Book> owned = bookRepository.findOwned(id);
+        long shared = idOf(owned, "公開作品");
+        long secret = idOf(owned, "私密筆記");
+        MockHttpSession reader = registerAndSignIn(randomName("u"));
 
         mvc.perform(get("/api/admin/users").param("keyword", name).session(admin))
-                .andExpect(jsonPath("$.data.items[0].bookCount").value(1))
+                .andExpect(jsonPath("$.data.items[0].bookCount").value(2))
                 .andExpect(jsonPath("$.data.items[0].passwordHash").doesNotExist());
         mvc.perform(delete("/api/admin/users/" + id).session(admin).with(csrf()))
                 .andExpect(status().isOk());
 
         assertThat(userRepository.existsById(id)).isFalse();
-        assertThat(bookRepository.existsById(bookId)).isFalse();
-        assertThat(chapterRepository.countByBookId(bookId)).isZero();
         // 舊登入失效
         mvc.perform(get("/api/books").session(user)).andExpect(status().isUnauthorized());
+        assertThat(chapterRepository.countByBookId(shared)).isPositive();
+        // 公開書可讀
+        mvc.perform(get("/api/books/" + shared).session(reader))
+                .andExpect(jsonPath("$.data.ownerName").value("已刪除用戶"))
+                .andExpect(jsonPath("$.data.mine").value(false));
+        mvc.perform(get("/api/books/" + shared + "/chapters/0").session(reader))
+                .andExpect(status().isOk());
+        mvc.perform(delete("/api/books/" + shared).session(reader).with(csrf()))
+                .andExpect(status().isForbidden());
+        // 私密書不外露
+        mvc.perform(get("/api/books/" + secret).session(reader))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/admin/books").param("keyword", "私密筆記").session(admin))
+                .andExpect(jsonPath("$.data.items[0].ownerDeleted").value(true))
+                .andExpect(jsonPath("$.data.items[0].isPrivate").value(true));
+        // 後臺仍可刪書
+        mvc.perform(delete("/api/admin/books/" + secret).session(admin).with(csrf()))
+                .andExpect(status().isOk());
+        assertThat(bookRepository.existsById(secret)).isFalse();
+    }
+
+    private static long idOf(List<Book> books, String title) {
+        return books.stream()
+                .filter(book -> book.getTitle().equals(title))
+                .findFirst().orElseThrow().getId();
     }
 
     @Test
@@ -106,10 +135,13 @@ class AdminUserTest extends AdminTestSupport {
                 .andReturn().getRequest().getSession();
     }
 
-    private void upload(MockHttpSession user) throws Exception {
+    private void upload(MockHttpSession user, String title, boolean isPrivate)
+            throws Exception {
         MockMultipartFile file = new MockMultipartFile(
                 "file", "a.txt", "text/plain", "第一章\n內容".getBytes(StandardCharsets.UTF_8));
-        mvc.perform(multipart("/api/books").file(file).session(user).with(csrf()))
+        mvc.perform(multipart("/api/books").file(file).param("title", title)
+                        .param("isPrivate", String.valueOf(isPrivate))
+                        .session(user).with(csrf()))
                 .andExpect(status().isCreated());
     }
 }

@@ -73,7 +73,7 @@ public class BookService {
     }
 
     // 失敗僅記錄
-    public void discardFiles(String key) {
+    private void discardFiles(String key) {
         try {
             bookStorage.delete(key);
         } catch (RuntimeException ex) {

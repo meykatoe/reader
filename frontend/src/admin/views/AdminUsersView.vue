@@ -19,7 +19,8 @@ function finish() {
 
 function remove(user) {
   const answer = window.prompt(
-    `刪除用戶 ${user.username} 會一併刪除其上傳的 ${user.bookCount} 本書與閱讀進度，無法復原。\n` +
+    `刪除用戶 ${user.username} 會移除帳號與閱讀進度，無法復原。\n` +
+      `其上傳的 ${user.bookCount} 本書會保留：公開書繼續公開，私密書僅後臺可見。\n` +
       '請輸入用戶名稱確認：',
   )
   if (answer === null) return

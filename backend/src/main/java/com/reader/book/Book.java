@@ -29,6 +29,10 @@ public class Book {
     @JoinColumn(name = "owner_id")
     private User owner;
 
+    // 區分平臺書
+    @Column(name = "owner_deleted", nullable = false)
+    private boolean ownerDeleted;
+
     @Column(nullable = false)
     private String title;
 
@@ -111,7 +115,20 @@ public class Book {
     }
 
     public String ownerName() {
-        return owner == null ? "平臺" : owner.getUsername();
+        if (owner != null) {
+            return owner.getUsername();
+        }
+        return ownerDeleted ? "已刪除用戶" : "平臺";
+    }
+
+    // 公開狀態不變
+    public void detachOwner() {
+        this.owner = null;
+        this.ownerDeleted = true;
+    }
+
+    public boolean isOwnerDeleted() {
+        return ownerDeleted;
     }
 
     public User getOwner() {

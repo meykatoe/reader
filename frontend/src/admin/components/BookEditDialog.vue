@@ -18,15 +18,18 @@ const busy = ref(false)
 
 onMounted(() => dialog.value.showModal())
 
+// 個人上傳
+const personal = props.book.ownerId !== null || props.book.ownerDeleted
+
 // 公開私人書籍
 function exposesPrivateBook() {
-  return props.book.ownerId !== null && props.book.isPrivate && !form.isPrivate
+  return personal && props.book.isPrivate && !form.isPrivate
 }
 
 async function submit() {
   if (
     exposesPrivateBook() &&
-    !window.confirm(`這是 ${props.book.ownerName} 的私密書籍，公開後所有人都能閱讀。確定嗎？`)
+    !window.confirm(`這是${props.book.ownerName}上傳的私密書籍，公開後所有人都能閱讀。確定嗎？`)
   ) {
     return
   }
