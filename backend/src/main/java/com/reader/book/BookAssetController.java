@@ -48,6 +48,20 @@ public class BookAssetController {
         return image(bookService.getVisible(id, user.id()), name);
     }
 
+    // 支援分段下載
+    @GetMapping("/file")
+    public ResponseEntity<Resource> file(@AuthenticationPrincipal AuthUser user,
+                                         @PathVariable Long id) {
+        Book book = bookService.getVisible(id, user.id());
+        if (book.getFormat() != BookFormat.PDF) {
+            throw ApiException.notFound("僅提供 PDF 原始檔");
+        }
+        Path path = fileStorage.sourcePath(book.getStorageKey(), book.getFormat().extension());
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new FileSystemResource(path));
+    }
+
     private ResponseEntity<Resource> image(Book book, String name) {
         if (name == null || !ASSET_NAME.matcher(name).matches()) {
             throw ApiException.notFound("找不到圖片");

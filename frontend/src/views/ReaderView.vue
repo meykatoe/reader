@@ -1,8 +1,11 @@
 <script setup>
-import { onMounted, ref } from 'vue'
+import { defineAsyncComponent, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { getBook } from '../api/books'
 import TextReader from '../components/reader/TextReader.vue'
+
+// 延後載入
+const PdfReader = defineAsyncComponent(() => import('../components/reader/PdfReader.vue'))
 
 const route = useRoute()
 const book = ref(null)
@@ -23,6 +26,6 @@ onMounted(async () => {
     <p v-else>載入中…</p>
     <RouterLink to="/">返回書架</RouterLink>
   </main>
-  <p v-else-if="book.format === 'PDF'" class="page">PDF 閱讀器開發中</p>
+  <PdfReader v-else-if="book.format === 'PDF'" :book="book" />
   <TextReader v-else :book="book" />
 </template>
