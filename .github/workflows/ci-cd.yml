@@ -26,6 +26,16 @@ jobs:
           distribution: temurin
           java-version: '25'
           cache: maven
+      # 僅重試下載
+      - name: 下載依賴
+        working-directory: backend
+        run: |
+          for wait in 60 180; do
+            mvn -B -q -U dependency:go-offline && exit 0
+            echo "下載失敗，${wait} 秒後重試"
+            sleep "$wait"
+          done
+          mvn -B -q -U dependency:go-offline || true
       - run: mvn -B verify
         working-directory: backend
 
@@ -56,8 +66,17 @@ jobs:
       WEB_PORT: '8088'
     steps:
       - uses: actions/checkout@v7
+      - uses: docker/setup-buildx-action@v4
+      # 共用建置快取
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          tags: local/reader:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
       - name: 啟動服務
-        run: docker compose -f docker-compose.prod.yml up -d --build --wait --wait-timeout 300
+        run: docker compose -f docker-compose.prod.yml up -d --no-build --wait --wait-timeout 420
       - name: 檢查回應
         run: |
           test "$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8088/)" = 200
@@ -123,8 +142,5 @@ jobs:
         run: |
           TAG="sha-${GITHUB_SHA::7}"
           scp docker-compose.prod.yml "$USER_NAME@$HOST:$TARGET/"
-          ssh "$USER_NAME@$HOST" "cd '$TARGET' \
-            && export DOCKERHUB_USERNAME='$IMAGE_OWNER' IMAGE_TAG='$TAG' \
-            && docker compose -f docker-compose.prod.yml pull \
-            && docker compose -f docker-compose.prod.yml up -d --no-build --wait --remove-orphans \
-            && sed -i '/^IMAGE_TAG=/d' .env && sed -i '\$aIMAGE_TAG=$TAG' .env"
+          ssh -o ServerAliveInterval=30 "$USER_NAME@$HOST" \
+            bash -s -- "'$TARGET'" "'$IMAGE_OWNER'" "$TAG" < deploy/remote-deploy.sh
