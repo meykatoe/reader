@@ -85,6 +85,8 @@ public class BookService {
                     privateBook,
                     key,
                     file.getSize());
+            book.assignCover(parsed.coverName());
+            fileStorage.saveAssets(key, parsed.assets());
             Long id = bookImporter.save(book, parsed.chapters());
             return bookRepository.findWithOwner(id).orElseThrow();
         } catch (RuntimeException ex) {

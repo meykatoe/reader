@@ -7,9 +7,10 @@ public record ParsedBook(
         String title,
         String author,
         List<ParsedChapter> chapters,
-        Map<String, byte[]> assets) {
+        Map<String, byte[]> assets,
+        String coverName) {
 
     public static ParsedBook textOnly(List<ParsedChapter> chapters) {
-        return new ParsedBook(null, null, chapters, Map.of());
+        return new ParsedBook(null, null, chapters, Map.of(), null);
     }
 }

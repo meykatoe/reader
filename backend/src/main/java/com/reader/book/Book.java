@@ -48,6 +48,9 @@ public class Book {
     @Column(name = "file_size", nullable = false)
     private long fileSize;
 
+    @Column(name = "cover_name", length = 64)
+    private String coverName;
+
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
@@ -76,6 +79,14 @@ public class Book {
 
     public void changeVisibility(boolean privateBook) {
         this.privateBook = privateBook;
+    }
+
+    public void assignCover(String coverName) {
+        this.coverName = coverName;
+    }
+
+    public String getCoverName() {
+        return coverName;
     }
 
     public Long getId() {
