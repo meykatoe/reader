@@ -34,6 +34,9 @@ spring:
     hibernate:
       ddl-auto: validate
 reader:
+  logs:
+    user-retention-days: ${LOG_USER_RETENTION_DAYS:90}
+    admin-retention-days: ${LOG_ADMIN_RETENTION_DAYS:365}
   limits:
     login-attempts: ${LIMIT_LOGIN_ATTEMPTS:5}
     registrations: ${LIMIT_REGISTRATIONS:3}
