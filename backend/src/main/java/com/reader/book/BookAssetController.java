@@ -2,13 +2,10 @@ package com.reader.book;
 
 import com.reader.common.ApiException;
 import com.reader.parser.ImageType;
-import com.reader.storage.FileStorage;
+import com.reader.storage.BookStorage;
 import com.reader.user.AuthUser;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.Duration;
 import java.util.regex.Pattern;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.http.CacheControl;
 import org.springframework.http.MediaType;
@@ -27,11 +24,11 @@ public class BookAssetController {
     private static final Pattern ASSET_NAME = Pattern.compile("[a-z]+-?\\d*\\.(jpg|png|gif|webp)");
 
     private final BookService bookService;
-    private final FileStorage fileStorage;
+    private final BookStorage bookStorage;
 
-    public BookAssetController(BookService bookService, FileStorage fileStorage) {
+    public BookAssetController(BookService bookService, BookStorage bookStorage) {
         this.bookService = bookService;
-        this.fileStorage = fileStorage;
+        this.bookStorage = bookStorage;
     }
 
     @GetMapping("/cover")
@@ -56,24 +53,23 @@ public class BookAssetController {
         if (book.getFormat() != BookFormat.PDF) {
             throw ApiException.notFound("僅提供 PDF 原始檔");
         }
-        Path path = fileStorage.sourcePath(book.getStorageKey(), book.getFormat().extension());
+        Resource source = bookStorage.source(book.getStorageKey(), book.getFormat().extension())
+                .orElseThrow(() -> ApiException.notFound("找不到檔案"));
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
-                .body(new FileSystemResource(path));
+                .body(source);
     }
 
     private ResponseEntity<Resource> image(Book book, String name) {
         if (name == null || !ASSET_NAME.matcher(name).matches()) {
             throw ApiException.notFound("找不到圖片");
         }
-        Path path = fileStorage.assetPath(book.getStorageKey(), name);
-        if (!Files.isRegularFile(path)) {
-            throw ApiException.notFound("找不到圖片");
-        }
+        Resource asset = bookStorage.asset(book.getStorageKey(), name)
+                .orElseThrow(() -> ApiException.notFound("找不到圖片"));
         String mediaType = ImageType.fromName(name).orElseThrow().mediaType();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(mediaType))
                 .cacheControl(CacheControl.maxAge(Duration.ofHours(1)).cachePrivate())
-                .body(new FileSystemResource(path));
+                .body(asset);
     }
 }
