@@ -13,13 +13,14 @@ import org.springframework.context.annotation.Primary;
 // 不實際寄信
 public class RecordingMailer implements Mailer {
 
-    private static final Pattern CODE = Pattern.compile("(?<!\\d)\\d{6}(?!\\d)");
+    // 須緊接標籤
+    private static final Pattern CODE = Pattern.compile("驗證碼：(\\d{6})(?!\\d)");
     private static final Pattern TOKEN = Pattern.compile("#token=([A-Za-z0-9_-]+)");
 
     public record Sent(String to, String subject, String text) {
 
         public String code() {
-            return find(CODE, text, 0);
+            return find(CODE, text, 1);
         }
 
         public String token() {
