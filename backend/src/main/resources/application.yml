@@ -3,3 +3,11 @@ server:
 spring:
   application:
     name: reader
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3307/reader?allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DB_USERNAME:reader}
+    password: ${DB_PASSWORD:reader}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
