@@ -48,6 +48,7 @@ reader:
     user-retention-days: ${LOG_USER_RETENTION_DAYS:90}
     admin-retention-days: ${LOG_ADMIN_RETENTION_DAYS:365}
   limits:
+    mails-per-day: ${LIMIT_MAILS_PER_DAY:200}
     login-attempts: ${LIMIT_LOGIN_ATTEMPTS:5}
     registrations: ${LIMIT_REGISTRATIONS:3}
     member-downloads: ${LIMIT_MEMBER_DOWNLOADS:10}
