@@ -1,5 +1,6 @@
 package com.reader.parser.mobi;
 
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParseException;
 import java.util.Arrays;
 
@@ -30,7 +31,7 @@ final class PalmDocDecompressor implements Decompressor {
                     int distance = pair >> 3;
                     int length = (pair & 7) + 3;
                     if (distance == 0 || distance > size) {
-                        throw new ParseException("MOBI 壓縮資料損毀");
+                        throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
                     }
                     // 允許重疊複製
                     for (int n = 0; n < length; n++, size++) {
@@ -39,7 +40,7 @@ final class PalmDocDecompressor implements Decompressor {
                 }
             }
         } catch (IndexOutOfBoundsException ex) {
-            throw new ParseException("MOBI 壓縮資料損毀");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         return Arrays.copyOf(output, size);
     }

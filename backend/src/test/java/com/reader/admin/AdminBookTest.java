@@ -38,15 +38,15 @@ class AdminBookTest extends AdminTestSupport {
         int id = create(session, title);
 
         mvc.perform(get("/api/admin/books").param("keyword", title).session(session))
-                .andExpect(jsonPath("$.total").value(1))
-                .andExpect(jsonPath("$.items[0].ownerName").value("平臺"));
+                .andExpect(jsonPath("$.data.total").value(1))
+                .andExpect(jsonPath("$.data.items[0].ownerName").value("平臺"));
         mvc.perform(put("/api/admin/books/" + id).session(session).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"新書名\",\"author\":\" \",\"isPrivate\":true}"))
-                .andExpect(jsonPath("$.title").value("新書名"))
-                .andExpect(jsonPath("$.author").isEmpty());
+                .andExpect(jsonPath("$.data.title").value("新書名"))
+                .andExpect(jsonPath("$.data.author").isEmpty());
         mvc.perform(delete("/api/admin/books/" + id).session(session).with(csrf()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         mvc.perform(delete("/api/admin/books/" + id).session(session).with(csrf()))
                 .andExpect(status().isNotFound());
     }
@@ -87,12 +87,12 @@ class AdminBookTest extends AdminTestSupport {
                         .param("title", title).session(session).with(csrf()))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        return JsonPath.read(json, "$.id");
+        return JsonPath.read(json, "$.data.id");
     }
 
     private List<Integer> visibleIds(RequestPostProcessor viewer) throws Exception {
         String json = mvc.perform(get("/api/books").with(viewer))
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        return JsonPath.read(json, "$[*].id");
+        return JsonPath.read(json, "$.data[*].id");
     }
 }

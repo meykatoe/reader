@@ -1,5 +1,6 @@
 package com.reader.parser.mobi;
 
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParseException;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -27,7 +28,7 @@ final class MobiDocument {
 
     String html() {
         if (header.textLength() > MAX_TEXT_BYTES) {
-            throw new ParseException("書籍文字內容過大");
+            throw new ParseException(ErrorCode.BOOK_CONTENT_TOO_LARGE);
         }
         Decompressor decompressor = createDecompressor();
         ByteArrayOutputStream text = new ByteArrayOutputStream();
@@ -35,7 +36,7 @@ final class MobiDocument {
             byte[] record = TrailingEntries.strip(database.record(i), header.trailingFlags());
             text.writeBytes(decompressor.decompress(record));
             if (text.size() > MAX_TEXT_BYTES) {
-                throw new ParseException("書籍文字內容過大");
+                throw new ParseException(ErrorCode.BOOK_CONTENT_TOO_LARGE);
             }
         }
         byte[] bytes = text.toByteArray();
@@ -57,7 +58,7 @@ final class MobiDocument {
             case UNCOMPRESSED -> input -> input;
             case PALMDOC -> new PalmDocDecompressor();
             case HUFF_CDIC -> createHuffDecompressor();
-            default -> throw new ParseException("不支援的 MOBI 壓縮格式");
+            default -> throw new ParseException(ErrorCode.COMPRESSION_UNSUPPORTED);
         };
     }
 

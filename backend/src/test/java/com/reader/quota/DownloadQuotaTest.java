@@ -29,7 +29,7 @@ class DownloadQuotaTest extends QuotaTestSupport {
 
         mvc.perform(get("/api/books/" + first + "/download").with(reader))
                 .andExpect(status().isForbidden());
-        requestDownload(first, reader).andExpect(jsonPath("$.downloadUsed").value(1));
+        requestDownload(first, reader).andExpect(jsonPath("$.data.downloadUsed").value(1));
         // 重複不扣次
         requestDownload(first, reader).andExpect(status().isOk());
         requestDownload(second, reader).andExpect(status().isTooManyRequests());
@@ -51,16 +51,16 @@ class DownloadQuotaTest extends QuotaTestSupport {
         }
         requestDownload(books.get(10), member).andExpect(status().isTooManyRequests());
         mvc.perform(get("/api/quota").with(member))
-                .andExpect(jsonPath("$.member").value(true))
-                .andExpect(jsonPath("$.downloadLimit").value(10))
-                .andExpect(jsonPath("$.downloadUsed").value(10));
+                .andExpect(jsonPath("$.data.member").value(true))
+                .andExpect(jsonPath("$.data.downloadLimit").value(10))
+                .andExpect(jsonPath("$.data.downloadUsed").value(10));
     }
 
     @Test
     void expiredMemberIsFreeUser() throws Exception {
         mvc.perform(get("/api/quota").with(account(Instant.now().minusSeconds(1))))
-                .andExpect(jsonPath("$.member").value(false))
-                .andExpect(jsonPath("$.downloadLimit").value(1));
+                .andExpect(jsonPath("$.data.member").value(false))
+                .andExpect(jsonPath("$.data.downloadLimit").value(1));
     }
 
     @Test

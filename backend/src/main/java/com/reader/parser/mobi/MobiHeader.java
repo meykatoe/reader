@@ -1,5 +1,6 @@
 package com.reader.parser.mobi;
 
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParseException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -25,10 +26,10 @@ record MobiHeader(
 
     static MobiHeader parse(byte[] record) {
         if (record.length < 132 || !Bytes.startsWith(record, 16, "MOBI")) {
-            throw new ParseException("缺少 MOBI 標頭");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         if (Bytes.u16(record, 12) != 0) {
-            throw new ParseException("不支援受版權保護（DRM）的書籍");
+            throw new ParseException(ErrorCode.BOOK_DRM_PROTECTED);
         }
         int headerLength = Bytes.index(record, 20);
         Charset charset = Bytes.u32(record, 28) == 65001

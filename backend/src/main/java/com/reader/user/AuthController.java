@@ -1,6 +1,9 @@
 package com.reader.user;
 
+import com.reader.audit.LogAccount;
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
+import com.reader.common.Result;
 import com.reader.limit.AccountGuard;
 import com.reader.security.SessionLogin;
 import com.reader.user.dto.LoginRequest;
@@ -47,25 +50,31 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public void register(@Valid @RequestBody RegisterRequest body, HttpServletRequest request) {
+    public Result<Void> register(@Valid @RequestBody RegisterRequest body,
+                                 HttpServletRequest request) {
+        LogAccount.mark(request, null, body.username());
         accountGuard.register(request.getRemoteAddr(),
                 () -> userService.register(body.username(), body.password()));
+        return Result.ok();
     }
 
     @PostMapping("/login")
-    public UserResponse login(@Valid @RequestBody LoginRequest body,
-                              HttpServletRequest request,
-                              HttpServletResponse response) {
+    public Result<UserResponse> login(@Valid @RequestBody LoginRequest body,
+                                      HttpServletRequest request,
+                                      HttpServletResponse response) {
+        LogAccount.mark(request, null, body.username());
         Authentication authentication = accountGuard.login(
                 "user", body.username(), request.getRemoteAddr(), () -> authenticate(body));
         sessionLogin.establish(authentication, contextRepository, request, response);
 
-        return toResponse((AuthUser) authentication.getPrincipal());
+        AuthUser user = (AuthUser) authentication.getPrincipal();
+        LogAccount.mark(request, user.id(), user.username());
+        return Result.ok(toResponse(user));
     }
 
     @GetMapping("/me")
-    public UserResponse me(@AuthenticationPrincipal AuthUser user) {
-        return toResponse(user);
+    public Result<UserResponse> me(@AuthenticationPrincipal AuthUser user) {
+        return Result.ok(toResponse(user));
     }
 
     private Authentication authenticate(LoginRequest body) {
@@ -73,7 +82,7 @@ public class AuthController {
             return authenticationManager.authenticate(
                     UsernamePasswordAuthenticationToken.unauthenticated(body.username(), body.password()));
         } catch (AuthenticationException ex) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "帳號或密碼錯誤");
+            throw new ApiException(ErrorCode.INVALID_CREDENTIALS);
         }
     }
 

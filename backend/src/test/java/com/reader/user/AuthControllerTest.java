@@ -42,7 +42,7 @@ class AuthControllerTest {
 
         mvc.perform(get("/api/auth/me").session(session))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.username").value("alice"));
+                .andExpect(jsonPath("$.data.username").value("alice"));
     }
 
     @Test

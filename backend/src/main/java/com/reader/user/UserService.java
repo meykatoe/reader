@@ -1,6 +1,7 @@
 package com.reader.user;
 
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,7 +23,7 @@ public class UserService implements UserDetailsService {
     @Transactional
     public void register(String username, String password) {
         if (userRepository.existsByUsername(username)) {
-            throw ApiException.conflict("使用者名稱已被使用");
+            throw new ApiException(ErrorCode.USERNAME_TAKEN);
         }
         userRepository.save(new User(username, passwordEncoder.encode(password)));
     }

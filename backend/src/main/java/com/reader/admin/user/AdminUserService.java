@@ -5,6 +5,7 @@ import com.reader.book.BookRepository;
 import com.reader.book.BookService;
 import com.reader.book.OwnerBookCount;
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import com.reader.user.User;
 import com.reader.user.UserRepository;
 import java.time.Instant;
@@ -47,7 +48,7 @@ public class AdminUserService {
 
     public AdminUserResponse changeMembership(Long userId, Instant memberUntil) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> ApiException.notFound("找不到用戶"));
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
         user.changeMembership(memberUntil);
         userRepository.save(user);
         return AdminUserResponse.of(user, bookRepository.findOwned(userId).size());
@@ -63,7 +64,7 @@ public class AdminUserService {
         try {
             return transaction.execute(status -> {
                 User user = userRepository.findById(userId)
-                        .orElseThrow(() -> ApiException.notFound("找不到用戶"));
+                        .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
                 List<Book> books = bookRepository.findOwned(userId);
                 bookRepository.deleteAll(books);
                 bookRepository.flush();
@@ -72,7 +73,7 @@ public class AdminUserService {
             });
         } catch (DataIntegrityViolationException ex) {
             // 同時有上傳
-            throw ApiException.conflict("用戶資料剛有變動，請重試");
+            throw new ApiException(ErrorCode.USER_DATA_CHANGED);
         }
     }
 }

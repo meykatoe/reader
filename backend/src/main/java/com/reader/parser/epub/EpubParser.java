@@ -1,6 +1,7 @@
 package com.reader.parser.epub;
 
 import com.reader.book.BookFormat;
+import com.reader.common.ErrorCode;
 import com.reader.parser.AssetCollector;
 import com.reader.parser.BookParser;
 import com.reader.parser.ContentSanitizer;
@@ -40,7 +41,7 @@ public class EpubParser implements BookParser {
 
             List<ParsedChapter> chapters = readChapters(archive, pack, assets);
             if (chapters.isEmpty()) {
-                throw new ParseException("EPUB 內沒有可閱讀的內容");
+                throw new ParseException(ErrorCode.BOOK_NO_CONTENT);
             }
             return new ParsedBook(pack.title(), pack.author(), chapters, assets.assets(), coverName, null);
         }
@@ -84,7 +85,7 @@ public class EpubParser implements BookParser {
                 .filter(element -> element.tagName().endsWith("CipherReference"))
                 .anyMatch(element -> spine.contains(EpubPaths.resolve("", element.attr("URI"))));
         if (locked) {
-            throw new ParseException("不支援受版權保護（DRM）的書籍");
+            throw new ParseException(ErrorCode.BOOK_DRM_PROTECTED);
         }
     }
 }

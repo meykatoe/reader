@@ -1,5 +1,6 @@
 package com.reader.parser.mobi;
 
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParseException;
 
 // 大端序讀取
@@ -23,7 +24,7 @@ final class Bytes {
     static int index(byte[] data, int offset) {
         long value = u32(data, offset);
         if (value > Integer.MAX_VALUE) {
-            throw new ParseException("MOBI 結構損毀");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         return (int) value;
     }

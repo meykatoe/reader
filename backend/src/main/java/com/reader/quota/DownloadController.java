@@ -1,15 +1,16 @@
 package com.reader.quota;
 
+import com.reader.common.Result;
 import com.reader.book.Book;
 import com.reader.book.BookService;
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import com.reader.storage.BookStorage;
 import com.reader.user.AuthUser;
 import java.nio.charset.StandardCharsets;
 import org.springframework.core.io.Resource;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -36,18 +37,18 @@ public class DownloadController {
     }
 
     @GetMapping("/quota")
-    public QuotaResponse quota(@AuthenticationPrincipal AuthUser user) {
-        return quotaService.downloadStatus(user.id());
+    public Result<QuotaResponse> quota(@AuthenticationPrincipal AuthUser user) {
+        return Result.ok(quotaService.downloadStatus(user.id()));
     }
 
     // 扣額度
     @PostMapping("/books/{id}/downloads")
-    public QuotaResponse request(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
+    public Result<QuotaResponse> request(@AuthenticationPrincipal AuthUser user, @PathVariable Long id) {
         Book book = bookService.getVisible(id, user.id());
         // 缺檔不扣次
         source(book);
         quotaService.grant(book, user.id(), AccessKind.DOWNLOAD);
-        return quotaService.downloadStatus(user.id());
+        return Result.ok(quotaService.downloadStatus(user.id()));
     }
 
     @GetMapping("/books/{id}/download")
@@ -55,7 +56,7 @@ public class DownloadController {
                                              @PathVariable Long id) {
         Book book = bookService.getVisible(id, user.id());
         if (!quotaService.isGranted(book, user.id(), AccessKind.DOWNLOAD)) {
-            throw new ApiException(HttpStatus.FORBIDDEN, "請先取得下載權限");
+            throw new ApiException(ErrorCode.DOWNLOAD_NOT_GRANTED);
         }
         ContentDisposition disposition = ContentDisposition.attachment()
                 .filename(DownloadFilename.of(book), StandardCharsets.UTF_8)
@@ -68,6 +69,6 @@ public class DownloadController {
 
     private Resource source(Book book) {
         return bookStorage.source(book.getStorageKey(), book.getFormat().extension())
-                .orElseThrow(() -> ApiException.notFound("找不到檔案"));
+                .orElseThrow(() -> new ApiException(ErrorCode.BOOK_FILE_NOT_FOUND));
     }
 }

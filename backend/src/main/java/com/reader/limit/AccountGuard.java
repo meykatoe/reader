@@ -1,5 +1,7 @@
 package com.reader.limit;
 
+import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import java.util.Locale;
 import java.util.function.Supplier;
 import org.springframework.stereotype.Component;
@@ -20,7 +22,7 @@ public class AccountGuard {
     public <T> T login(String scope, String username, String ip, Supplier<T> attempt) {
         String key = "login|" + scope + "|" + username.toLowerCase(Locale.ROOT) + "|" + ip;
         if (!limiter.tryAcquire(key, limits.loginAttempts(), limits.loginWindow())) {
-            throw new TooManyRequestsException("登入嘗試次數過多，請稍後再試");
+            throw new ApiException(ErrorCode.LOGIN_LOCKED);
         }
         T result = attempt.get();
         limiter.reset(key);
@@ -31,7 +33,7 @@ public class AccountGuard {
     public void register(String ip, Runnable action) {
         String key = "register|" + ip;
         if (!limiter.tryAcquire(key, limits.registrations(), limits.registrationWindow())) {
-            throw new TooManyRequestsException("此網路註冊次數過多，請稍後再試");
+            throw new ApiException(ErrorCode.REGISTER_LIMITED);
         }
         try {
             action.run();

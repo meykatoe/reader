@@ -1,6 +1,7 @@
 package com.reader.parser.pdf;
 
 import com.reader.book.BookFormat;
+import com.reader.common.ErrorCode;
 import com.reader.parser.BookParser;
 import com.reader.parser.ParseException;
 import com.reader.parser.ParsedBook;
@@ -40,7 +41,7 @@ public class PdfParser implements BookParser {
     public ParsedBook parse(Path file) throws IOException {
         try (PDDocument document = Loader.loadPDF(file.toFile())) {
             if (document.getNumberOfPages() == 0) {
-                throw new ParseException("PDF 沒有任何頁面");
+                throw new ParseException(ErrorCode.BOOK_NO_CONTENT);
             }
             PDDocumentInformation information = document.getDocumentInformation();
             byte[] cover = renderCover(document);
@@ -52,7 +53,7 @@ public class PdfParser implements BookParser {
                     cover == null ? null : COVER_NAME,
                     document.getNumberOfPages());
         } catch (InvalidPasswordException ex) {
-            throw new ParseException("不支援加密的 PDF");
+            throw new ParseException(ErrorCode.PDF_ENCRYPTED);
         }
     }
 

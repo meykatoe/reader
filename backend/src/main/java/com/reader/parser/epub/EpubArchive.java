@@ -1,5 +1,6 @@
 package com.reader.parser.epub;
 
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParseException;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -39,7 +40,7 @@ final class EpubArchive implements AutoCloseable {
             byte[] data = input.readNBytes(MAX_ENTRY_BYTES + 1);
             totalRead += data.length;
             if (data.length > MAX_ENTRY_BYTES || totalRead > MAX_TOTAL_BYTES) {
-                throw new ParseException("書籍解壓後內容過大");
+                throw new ParseException(ErrorCode.BOOK_CONTENT_TOO_LARGE);
             }
             return data;
         } catch (IOException ex) {
@@ -50,7 +51,7 @@ final class EpubArchive implements AutoCloseable {
     Document readXml(String path) {
         byte[] data = read(path);
         if (data == null) {
-            throw new ParseException("EPUB 缺少必要檔案");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         try {
             Document document = Jsoup.parse(
