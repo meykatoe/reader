@@ -16,7 +16,7 @@ function readCookie(name) {
   return match ? decodeURIComponent(match[1]) : ''
 }
 
-export async function request(path, { method = 'GET', body } = {}) {
+export async function request(path, { method = 'GET', body, keepalive = false } = {}) {
   const headers = {}
   let payload = body
   if (body && !(body instanceof FormData)) {
@@ -28,7 +28,7 @@ export async function request(path, { method = 'GET', body } = {}) {
     headers['X-XSRF-TOKEN'] = readCookie('XSRF-TOKEN')
   }
 
-  const response = await fetch(`/api${path}`, { method, headers, body: payload })
+  const response = await fetch(`/api${path}`, { method, headers, body: payload, keepalive })
   const text = await response.text()
   const data = text && response.headers.get('content-type')?.includes('json') ? JSON.parse(text) : null
 

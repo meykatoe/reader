@@ -9,12 +9,12 @@ defineEmits(['toggle-privacy', 'remove'])
 
 <template>
   <article class="card">
-    <div class="cover">
+    <RouterLink :to="`/books/${book.id}`" class="cover">
       <img v-if="book.hasCover" :src="`/api/books/${book.id}/cover`" :alt="book.title" loading="lazy" />
       <span v-else class="cover-title">{{ book.title }}</span>
       <span class="badge format">{{ book.format }}</span>
       <span v-if="book.isPrivate" class="badge lock">私密</span>
-    </div>
+    </RouterLink>
 
     <h2 class="title" :title="book.title">{{ book.title }}</h2>
     <p class="meta">{{ book.author || '未知作者' }}</p>
@@ -43,6 +43,7 @@ defineEmits(['toggle-privacy', 'remove'])
   display: grid;
   place-items: center;
   overflow: hidden;
+  text-decoration: none;
   background: linear-gradient(160deg, #44688c, #2a3f55);
   border-radius: 6px;
   box-shadow: 0 2px 8px rgb(0 0 0 / 18%);

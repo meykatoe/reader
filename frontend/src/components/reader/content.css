@@ -1,0 +1,54 @@
+.book-content {
+  height: 100%;
+  column-fill: auto;
+  font-family: var(--reader-font, 'Noto Serif TC', 'Noto Serif CJK TC', serif);
+  font-size: var(--reader-font-size, 19px);
+  line-height: var(--reader-line-height, 1.8);
+  text-align: justify;
+  overflow-wrap: break-word;
+}
+
+.book-content p {
+  margin: 0 0 0.6em;
+  text-indent: 2em;
+  orphans: 2;
+  widows: 2;
+}
+
+.book-content p:has(> img) {
+  text-indent: 0;
+  text-align: center;
+}
+
+.book-content h1,
+.book-content h2,
+.book-content h3,
+.book-content h4 {
+  margin: 0 0 1em;
+  line-height: 1.4;
+  text-align: left;
+  break-after: avoid;
+  break-inside: avoid;
+}
+
+.book-content img {
+  max-width: 100%;
+  max-height: calc(var(--page-height) - 8px);
+  object-fit: contain;
+  break-inside: avoid;
+}
+
+.book-content pre {
+  white-space: pre-wrap;
+}
+
+.book-content table {
+  max-width: 100%;
+  border-collapse: collapse;
+}
+
+.book-content td,
+.book-content th {
+  padding: 4px 8px;
+  border: 1px solid currentColor;
+}
