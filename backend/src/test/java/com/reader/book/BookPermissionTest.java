@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -15,9 +16,12 @@ import com.jayway.jsonpath.JsonPath;
 import com.reader.user.AuthUser;
 import com.reader.user.User;
 import com.reader.user.UserRepository;
+import java.io.ByteArrayOutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -97,6 +101,23 @@ class BookPermissionTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void pdfFileSupportsRangeAndPermission() throws Exception {
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        try (PDDocument document = new PDDocument()) {
+            document.addPage(new PDPage());
+            document.save(output);
+        }
+        int id = upload(new MockMultipartFile(
+                "file", "sample.pdf", "application/pdf", output.toByteArray()), true);
+
+        mvc.perform(get("/api/books/" + id + "/file").header("Range", "bytes=0-3").with(owner))
+                .andExpect(status().isPartialContent())
+                .andExpect(content().string("%PDF"));
+        mvc.perform(get("/api/books/" + id + "/file").with(guest))
+                .andExpect(status().isNotFound());
+    }
+
     private RequestPostProcessor createUser() {
         String name = "u" + UUID.randomUUID().toString().substring(0, 8);
         User saved = userRepository.save(new User(name, "unused"));
@@ -104,8 +125,11 @@ class BookPermissionTest {
     }
 
     private int upload(boolean isPrivate) throws Exception {
-        MockMultipartFile file = new MockMultipartFile(
-                "file", "sample.txt", "text/plain", "第一章\n內容".getBytes(StandardCharsets.UTF_8));
+        return upload(new MockMultipartFile(
+                "file", "sample.txt", "text/plain", "第一章\n內容".getBytes(StandardCharsets.UTF_8)), isPrivate);
+    }
+
+    private int upload(MockMultipartFile file, boolean isPrivate) throws Exception {
         String json = mvc.perform(multipart("/api/books").file(file)
                         .param("isPrivate", String.valueOf(isPrivate))
                         .with(owner).with(csrf()))
