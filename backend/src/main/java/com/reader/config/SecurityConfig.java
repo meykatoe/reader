@@ -24,8 +24,10 @@ public class SecurityConfig {
             throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/register", "/api/auth/login", "/error").permitAll()
-                        .anyRequest().authenticated())
+                        .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                        .requestMatchers("/api/**").authenticated()
+                        // 其餘為靜態頁
+                        .anyRequest().permitAll())
                 .csrf(csrf -> csrf.spa())
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .exceptionHandling(handling -> handling
