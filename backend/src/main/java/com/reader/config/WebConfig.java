@@ -1,6 +1,7 @@
 package com.reader.config;
 
 import java.time.Duration;
+import java.util.List;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.CacheControl;
 import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry;
@@ -18,6 +19,9 @@ public class WebConfig implements WebMvcConfigurer {
     public void addViewControllers(ViewControllerRegistry registry) {
         registry.addViewController("/login").setViewName(INDEX);
         registry.addViewController("/books/{id:\\d+}").setViewName(INDEX);
+        for (String path : List.of("/admin", "/admin/login", "/admin/books", "/admin/users")) {
+            registry.addViewController(path).setViewName(INDEX);
+        }
     }
 
     // 雜湊檔長快取

@@ -2,6 +2,10 @@
 import { onMounted, ref } from 'vue'
 import { uploadBook } from '../../api/books'
 
+const props = defineProps({
+  // 後臺另指定
+  upload: { type: Function, default: uploadBook },
+})
 const emit = defineEmits(['close', 'uploaded'])
 
 const ACCEPT = '.epub,.txt,.pdf,.mobi'
@@ -30,7 +34,7 @@ async function submit() {
   formData.append('title', title.value)
   formData.append('isPrivate', isPrivate.value)
   try {
-    emit('uploaded', await uploadBook(formData))
+    emit('uploaded', await props.upload(formData))
   } catch (e) {
     error.value = e.message
   } finally {

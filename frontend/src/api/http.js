@@ -41,8 +41,9 @@ export async function request(path, { method = 'GET', body, keepalive = false } 
   const data = text && response.headers.get('content-type')?.includes('json') ? JSON.parse(text) : null
 
   if (!response.ok) {
-    if (response.status === 401 && !path.startsWith('/auth/')) {
-      unauthorizedHandler()
+    // 登入除外
+    if (response.status === 401 && !/^(\/admin)?\/auth\//.test(path)) {
+      unauthorizedHandler(path)
     }
     throw new HttpError(response.status, data?.message || `請求失敗（${response.status}）`)
   }
