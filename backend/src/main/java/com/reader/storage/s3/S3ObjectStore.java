@@ -46,8 +46,7 @@ public class S3ObjectStore implements ObjectStore, AutoCloseable {
                 .findFirst();
     }
 
-    // 缺檔回傳空值
-    public OptionalLong size(String key) {
+    private OptionalLong size(String key) {
         try {
             long length = client.headObject(request -> request.bucket(bucket).key(key)).contentLength();
             return OptionalLong.of(length);
@@ -91,7 +90,7 @@ public class S3ObjectStore implements ObjectStore, AutoCloseable {
         }
         DeleteObjectsResponse response = call(() -> client.deleteObjects(request ->
                 request.bucket(bucket).delete(delete -> delete.objects(objects))));
-        // 個別失敗需檢查
+        // 檢查個別錯誤
         if (!response.errors().isEmpty()) {
             throw new StorageException(new IllegalStateException(
                     "Failed to delete: " + response.errors().getFirst()));

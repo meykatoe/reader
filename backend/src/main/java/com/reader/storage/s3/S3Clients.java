@@ -27,7 +27,7 @@ public final class S3Clients {
                 .credentialsProvider(StaticCredentialsProvider.create(
                         AwsBasicCredentials.create(settings.accessKey(), settings.secretKey())))
                 .forcePathStyle(true)
-                // 相容第三方服務
+                // 第三方相容
                 .requestChecksumCalculation(RequestChecksumCalculation.WHEN_REQUIRED)
                 .responseChecksumValidation(ResponseChecksumValidation.WHEN_REQUIRED)
                 .httpClientBuilder(UrlConnectionHttpClient.builder()

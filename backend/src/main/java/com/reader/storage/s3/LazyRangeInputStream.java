@@ -60,7 +60,7 @@ class LazyRangeInputStream extends InputStream {
         if (delegate == null) {
             return;
         }
-        // 未讀完直接中斷
+        // 提前結束中斷
         if (position < length && delegate instanceof ResponseInputStream<?> response) {
             response.abort();
         }
