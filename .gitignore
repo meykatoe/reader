@@ -1,0 +1,14 @@
+# 後端
+backend/target/
+# 前端
+frontend/node_modules/
+frontend/dist/
+frontend/public/pdfjs/
+# 資料
+data/
+.env
+# 編輯器
+.idea/
+.vscode/
+*.log
+.DS_Store
