@@ -57,8 +57,17 @@ public class BookService {
         return getVisible(bookId, userId);
     }
 
+    public Book get(Long bookId) {
+        return bookRepository.findWithOwner(bookId)
+                .orElseThrow(() -> ApiException.notFound("找不到書籍"));
+    }
+
     public void delete(Long bookId, Long userId) {
-        Book book = getOwned(bookId, userId);
+        remove(getOwned(bookId, userId));
+    }
+
+    // 須先驗權限
+    public void remove(Book book) {
         bookRepository.delete(book);
         discardFiles(book.getStorageKey());
     }
@@ -71,7 +80,8 @@ public class BookService {
         return book;
     }
 
-    public Book upload(Long userId, MultipartFile file, String title, boolean privateBook) {
+    // 空值為平臺
+    public Book upload(Long ownerId, MultipartFile file, String title, boolean privateBook) {
         if (file.isEmpty()) {
             throw ApiException.badRequest("檔案內容為空");
         }
@@ -80,7 +90,7 @@ public class BookService {
         try (UploadedFile upload = UploadedFile.of(file, format.extension())) {
             ParsedBook parsed = parserService.parse(format, upload.path());
             Book book = new Book(
-                    userRepository.getReferenceById(userId),
+                    ownerId == null ? null : userRepository.getReferenceById(ownerId),
                     resolveTitle(title, parsed.title(), file.getOriginalFilename()),
                     truncate(parsed.author()),
                     format,

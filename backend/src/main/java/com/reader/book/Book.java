@@ -24,7 +24,8 @@ public class Book {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
+    // 空值為平臺
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private User owner;
 
@@ -73,7 +74,7 @@ public class Book {
     }
 
     public boolean isOwnedBy(Long userId) {
-        return owner.getId().equals(userId);
+        return owner != null && owner.getId().equals(userId);
     }
 
     public boolean isVisibleTo(Long userId) {
@@ -100,8 +101,17 @@ public class Book {
         return coverName;
     }
 
+    public void rename(String title, String author) {
+        this.title = title;
+        this.author = author;
+    }
+
     public Long getId() {
         return id;
+    }
+
+    public String ownerName() {
+        return owner == null ? "平臺" : owner.getUsername();
     }
 
     public User getOwner() {

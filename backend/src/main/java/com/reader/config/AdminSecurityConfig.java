@@ -1,5 +1,6 @@
 package com.reader.config;
 
+import com.reader.admin.auth.AdminAuthority;
 import com.reader.admin.auth.AdminRefreshFilter;
 import com.reader.admin.auth.AdminRepository;
 import com.reader.admin.auth.AdminSession;
@@ -26,6 +27,8 @@ public class AdminSecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/admin/auth/login").permitAll()
                         .requestMatchers("/api/admin/auth/**").authenticated()
+                        .requestMatchers("/api/admin/books/**")
+                        .hasAuthority(AdminAuthority.BOOK_MANAGE.name())
                         // 未列出即拒絕
                         .anyRequest().denyAll())
                 .csrf(csrf -> csrf.spa())
