@@ -1,6 +1,7 @@
 package com.reader.user;
 
 import com.reader.common.ApiException;
+import com.reader.security.SessionLogin;
 import com.reader.user.dto.LoginRequest;
 import com.reader.user.dto.RegisterRequest;
 import com.reader.user.dto.UserResponse;
@@ -13,9 +14,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.authentication.session.SessionAuthenticationStrategy;
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -31,16 +29,16 @@ public class AuthController {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository contextRepository;
-    private final SessionAuthenticationStrategy sessionStrategy;
+    private final SessionLogin sessionLogin;
 
     public AuthController(UserService userService,
                           AuthenticationManager authenticationManager,
                           SecurityContextRepository contextRepository,
-                          SessionAuthenticationStrategy sessionStrategy) {
+                          SessionLogin sessionLogin) {
         this.userService = userService;
         this.authenticationManager = authenticationManager;
         this.contextRepository = contextRepository;
-        this.sessionStrategy = sessionStrategy;
+        this.sessionLogin = sessionLogin;
     }
 
     @PostMapping("/register")
@@ -54,13 +52,7 @@ public class AuthController {
                               HttpServletRequest request,
                               HttpServletResponse response) {
         Authentication authentication = authenticate(body);
-        // 防固定攻擊
-        sessionStrategy.onAuthentication(authentication, request, response);
-
-        SecurityContext context = SecurityContextHolder.createEmptyContext();
-        context.setAuthentication(authentication);
-        SecurityContextHolder.setContext(context);
-        contextRepository.saveContext(context, request, response);
+        sessionLogin.establish(authentication, contextRepository, request, response);
 
         return toResponse((AuthUser) authentication.getPrincipal());
     }

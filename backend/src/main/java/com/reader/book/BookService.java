@@ -57,10 +57,28 @@ public class BookService {
         return getVisible(bookId, userId);
     }
 
+    public Book get(Long bookId) {
+        return bookRepository.findWithOwner(bookId)
+                .orElseThrow(() -> ApiException.notFound("找不到書籍"));
+    }
+
     public void delete(Long bookId, Long userId) {
-        Book book = getOwned(bookId, userId);
+        remove(getOwned(bookId, userId));
+    }
+
+    // 須先驗權限
+    public void remove(Book book) {
         bookRepository.delete(book);
         discardFiles(book.getStorageKey());
+    }
+
+    // 失敗僅記錄
+    public void discardFiles(String key) {
+        try {
+            bookStorage.delete(key);
+        } catch (RuntimeException ex) {
+            log.warn("Orphaned files left in storage: {}", BookStorage.directory(key), ex);
+        }
     }
 
     private Book getOwned(Long bookId, Long userId) {
@@ -71,7 +89,8 @@ public class BookService {
         return book;
     }
 
-    public Book upload(Long userId, MultipartFile file, String title, boolean privateBook) {
+    // 空值為平臺
+    public Book upload(Long ownerId, MultipartFile file, String title, boolean privateBook) {
         if (file.isEmpty()) {
             throw ApiException.badRequest("檔案內容為空");
         }
@@ -80,7 +99,7 @@ public class BookService {
         try (UploadedFile upload = UploadedFile.of(file, format.extension())) {
             ParsedBook parsed = parserService.parse(format, upload.path());
             Book book = new Book(
-                    userRepository.getReferenceById(userId),
+                    ownerId == null ? null : userRepository.getReferenceById(ownerId),
                     resolveTitle(title, parsed.title(), file.getOriginalFilename()),
                     truncate(parsed.author()),
                     format,
@@ -103,15 +122,6 @@ public class BookService {
             // 清除殘留檔
             discardFiles(book.getStorageKey());
             throw ex;
-        }
-    }
-
-    // 失敗僅記錄
-    private void discardFiles(String key) {
-        try {
-            bookStorage.delete(key);
-        } catch (RuntimeException ex) {
-            log.warn("Orphaned files left in storage: {}", BookStorage.directory(key), ex);
         }
     }
 

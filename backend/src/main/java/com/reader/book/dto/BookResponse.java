@@ -25,7 +25,7 @@ public record BookResponse(
                 book.getFormat(),
                 book.isPrivateBook(),
                 book.isOwnedBy(viewerId),
-                book.getOwner().getUsername(),
+                book.ownerName(),
                 book.getFileSize(),
                 book.getCoverName() != null,
                 book.getPageCount(),
