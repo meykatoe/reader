@@ -56,7 +56,7 @@ public class LocalObjectStore implements ObjectStore {
         return target;
     }
 
-    // 禁止跳出根目錄
+    // 禁止越界
     private Path resolve(String key) {
         Path path = root.resolve(key).normalize();
         if (!path.startsWith(root) || path.equals(root)) {
