@@ -1,8 +1,17 @@
+FROM node:24-alpine AS web
+WORKDIR /web
+COPY frontend/package.json frontend/package-lock.json ./
+RUN npm ci
+COPY frontend ./
+RUN npm run build
+
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /app
-COPY pom.xml .
+COPY backend/pom.xml .
 RUN mvn -B -q dependency:go-offline
-COPY src ./src
+COPY backend/src ./src
+# 打包前端頁面
+COPY --from=web /web/dist ./src/main/resources/static
 # 測試交給CI
 RUN mvn -B -q package -DskipTests
 
