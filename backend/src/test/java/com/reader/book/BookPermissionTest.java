@@ -7,6 +7,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.patch;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -71,6 +72,29 @@ class BookPermissionTest {
                 .andExpect(jsonPath("$.isPrivate").value(true));
         mvc.perform(delete("/api/books/" + id).with(owner).with(csrf()))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    void readingFollowsVisibility() throws Exception {
+        int id = upload(true);
+
+        mvc.perform(get("/api/books/" + id + "/chapters/0").with(owner))
+                .andExpect(jsonPath("$.title").value("第一章"));
+        mvc.perform(get("/api/books/" + id + "/chapters").with(guest))
+                .andExpect(status().isNotFound());
+        mvc.perform(get("/api/books/" + id + "/chapters/0").with(guest))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(put("/api/books/" + id + "/progress").with(owner).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"location\":0,\"ratio\":0.5}"))
+                .andExpect(status().isNoContent());
+        mvc.perform(get("/api/books/" + id + "/progress").with(owner))
+                .andExpect(jsonPath("$.ratio").value(0.5));
+        mvc.perform(put("/api/books/" + id + "/progress").with(owner).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"location\":9,\"ratio\":0}"))
+                .andExpect(status().isBadRequest());
     }
 
     private RequestPostProcessor createUser() {
