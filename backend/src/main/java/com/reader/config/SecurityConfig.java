@@ -1,5 +1,7 @@
 package com.reader.config;
 
+import com.reader.user.DeletedUserFilter;
+import com.reader.user.UserRepository;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
@@ -13,6 +15,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.authentication.logout.HttpStatusReturningLogoutSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.context.SecurityContextHolderFilter;
 import org.springframework.security.web.context.SecurityContextRepository;
 
 @Configuration
@@ -20,8 +23,9 @@ public class SecurityConfig {
 
     @Bean
     @Order(2)
-    SecurityFilterChain filterChain(HttpSecurity http, SecurityContextRepository contextRepository)
-            throws Exception {
+    SecurityFilterChain filterChain(HttpSecurity http,
+                                    SecurityContextRepository contextRepository,
+                                    UserRepository userRepository) throws Exception {
         return http
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
@@ -29,6 +33,7 @@ public class SecurityConfig {
                         // 其餘為靜態頁
                         .anyRequest().permitAll())
                 .csrf(csrf -> csrf.spa())
+                .addFilterAfter(new DeletedUserFilter(userRepository), SecurityContextHolderFilter.class)
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

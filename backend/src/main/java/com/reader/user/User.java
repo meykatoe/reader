@@ -42,6 +42,10 @@ public class User {
         return username;
     }
 
+    public Instant getCreatedAt() {
+        return createdAt;
+    }
+
     public String getPasswordHash() {
         return passwordHash;
     }

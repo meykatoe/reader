@@ -7,6 +7,7 @@ import com.reader.admin.auth.AdminSession;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
@@ -29,6 +30,10 @@ public class AdminSecurityConfig {
                         .requestMatchers("/api/admin/auth/**").authenticated()
                         .requestMatchers("/api/admin/books/**")
                         .hasAuthority(AdminAuthority.BOOK_MANAGE.name())
+                        .requestMatchers(HttpMethod.GET, "/api/admin/users")
+                        .hasAuthority(AdminAuthority.USER_VIEW.name())
+                        .requestMatchers(HttpMethod.DELETE, "/api/admin/users/*")
+                        .hasAuthority(AdminAuthority.USER_DELETE.name())
                         // 未列出即拒絕
                         .anyRequest().denyAll())
                 .csrf(csrf -> csrf.spa())

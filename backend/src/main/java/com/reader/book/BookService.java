@@ -72,6 +72,15 @@ public class BookService {
         discardFiles(book.getStorageKey());
     }
 
+    // 失敗僅記錄
+    public void discardFiles(String key) {
+        try {
+            bookStorage.delete(key);
+        } catch (RuntimeException ex) {
+            log.warn("Orphaned files left in storage: {}", BookStorage.directory(key), ex);
+        }
+    }
+
     private Book getOwned(Long bookId, Long userId) {
         Book book = getVisible(bookId, userId);
         if (!book.isOwnedBy(userId)) {
@@ -113,15 +122,6 @@ public class BookService {
             // 清除殘留檔
             discardFiles(book.getStorageKey());
             throw ex;
-        }
-    }
-
-    // 失敗僅記錄
-    private void discardFiles(String key) {
-        try {
-            bookStorage.delete(key);
-        } catch (RuntimeException ex) {
-            log.warn("Orphaned files left in storage: {}", BookStorage.directory(key), ex);
         }
     }
 
