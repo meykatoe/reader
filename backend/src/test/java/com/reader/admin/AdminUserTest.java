@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import com.reader.book.Book;
 import com.reader.book.BookRepository;
 import com.reader.content.ChapterRepository;
+import com.reader.storage.BookStorage;
 import com.reader.support.Registrations;
 import com.reader.user.UserRepository;
 import java.nio.charset.StandardCharsets;
@@ -34,6 +35,9 @@ class AdminUserTest extends AdminTestSupport {
     @Autowired
     private ChapterRepository chapterRepository;
 
+    @Autowired
+    private BookStorage bookStorage;
+
     @Test
     void standardAdminCannotTouchUsers() throws Exception {
         MockHttpSession session = signIn(createAdmin(2));
@@ -51,7 +55,7 @@ class AdminUserTest extends AdminTestSupport {
     }
 
     @Test
-    void deletingUserKeepsBooks() throws Exception {
+    void deletingUserKeepsOnlyPublicBooks() throws Exception {
         MockHttpSession admin = signIn(createAdmin(1));
         String name = randomName("u");
         MockHttpSession user = registerAndSignIn(name);
@@ -63,8 +67,12 @@ class AdminUserTest extends AdminTestSupport {
         long secret = idOf(owned, "私密筆記");
         MockHttpSession reader = registerAndSignIn(randomName("u"));
 
+        String secretKey = bookRepository.findById(secret).orElseThrow().getStorageKey();
+        String sharedKey = bookRepository.findById(shared).orElseThrow().getStorageKey();
+
         mvc.perform(get("/api/admin/users").param("keyword", name).session(admin))
                 .andExpect(jsonPath("$.data.items[0].bookCount").value(2))
+                .andExpect(jsonPath("$.data.items[0].privateBookCount").value(1))
                 .andExpect(jsonPath("$.data.items[0].passwordHash").doesNotExist());
         mvc.perform(delete("/api/admin/users/" + id).session(admin).with(csrf()))
                 .andExpect(status().isOk());
@@ -72,8 +80,13 @@ class AdminUserTest extends AdminTestSupport {
         assertThat(userRepository.existsById(id)).isFalse();
         // 舊登入失效
         mvc.perform(get("/api/books").session(user)).andExpect(status().isUnauthorized());
-        assertThat(chapterRepository.countByBookId(shared)).isPositive();
+        // 私密書全刪
+        assertThat(bookRepository.existsById(secret)).isFalse();
+        assertThat(chapterRepository.countByBookId(secret)).isZero();
+        assertThat(bookStorage.source(secretKey, "txt")).isEmpty();
         // 公開書可讀
+        assertThat(chapterRepository.countByBookId(shared)).isPositive();
+        assertThat(bookStorage.source(sharedKey, "txt")).isPresent();
         mvc.perform(get("/api/books/" + shared).session(reader))
                 .andExpect(jsonPath("$.data.ownerName").value("已刪除用戶"))
                 .andExpect(jsonPath("$.data.mine").value(false));
@@ -81,16 +94,6 @@ class AdminUserTest extends AdminTestSupport {
                 .andExpect(status().isOk());
         mvc.perform(delete("/api/books/" + shared).session(reader).with(csrf()))
                 .andExpect(status().isForbidden());
-        // 私密書不外露
-        mvc.perform(get("/api/books/" + secret).session(reader))
-                .andExpect(status().isNotFound());
-        mvc.perform(get("/api/admin/books").param("keyword", "私密筆記").session(admin))
-                .andExpect(jsonPath("$.data.items[0].ownerDeleted").value(true))
-                .andExpect(jsonPath("$.data.items[0].isPrivate").value(true));
-        // 後臺仍可刪書
-        mvc.perform(delete("/api/admin/books/" + secret).session(admin).with(csrf()))
-                .andExpect(status().isOk());
-        assertThat(bookRepository.existsById(secret)).isFalse();
     }
 
     private static long idOf(List<Book> books, String title) {
