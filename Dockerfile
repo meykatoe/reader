@@ -8,7 +8,10 @@ RUN npm run build
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /app
 COPY backend/pom.xml .
-RUN mvn -B -q dependency:go-offline
+# 下載失敗重試
+RUN mvn -B -q dependency:go-offline \
+    || (sleep 60 && mvn -B -q -U dependency:go-offline) \
+    || (sleep 180 && mvn -B -q -U dependency:go-offline)
 COPY backend/src ./src
 # 打包前端頁面
 COPY --from=web /web/dist ./src/main/resources/static
