@@ -2,89 +2,87 @@ package com.reader.admin.user;
 
 import com.reader.book.Book;
 import com.reader.book.BookRepository;
-import com.reader.book.BookService;
+import com.reader.book.DeletionCause;
 import com.reader.book.OwnerBookCount;
 import com.reader.common.ApiException;
 import com.reader.common.ErrorCode;
 import com.reader.user.User;
 import com.reader.user.UserRepository;
+import java.time.Clock;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class AdminUserService {
 
     private final UserRepository userRepository;
     private final BookRepository bookRepository;
-    private final BookService bookService;
-    private final TransactionTemplate transaction;
+    private final Clock clock;
 
     public AdminUserService(UserRepository userRepository,
                             BookRepository bookRepository,
-                            BookService bookService,
-                            TransactionTemplate transaction) {
+                            Clock clock) {
         this.userRepository = userRepository;
         this.bookRepository = bookRepository;
-        this.bookService = bookService;
-        this.transaction = transaction;
+        this.clock = clock;
     }
 
-    public Page<AdminUserResponse> search(String keyword, Pageable pageable) {
-        Page<User> users = userRepository.findByUsernameContainingIgnoreCase(keyword, pageable);
-        Map<Long, OwnerBookCount> counts = bookRepository
+    public Page<AdminUserResponse> search(String keyword, boolean deleted, Pageable pageable) {
+        Page<User> users = deleted
+                ? userRepository.findByUsernameContainingIgnoreCaseAndDeletedAtIsNotNull(
+                        keyword, pageable)
+                : userRepository.findByUsernameContainingIgnoreCaseAndDeletedAtIsNull(
+                        keyword, pageable);
+        Map<Long, Long> counts = bookRepository
                 .countByOwners(users.map(User::getId).getContent())
                 .stream()
-                .collect(Collectors.toMap(OwnerBookCount::getOwnerId, Function.identity()));
-        return users.map(user -> {
-            OwnerBookCount count = counts.get(user.getId());
-            return count == null
-                    ? AdminUserResponse.of(user, 0, 0)
-                    : AdminUserResponse.of(user, count.getTotal(), count.getPrivateTotal());
-        });
+                .collect(Collectors.toMap(OwnerBookCount::getOwnerId, OwnerBookCount::getTotal));
+        return users.map(user ->
+                AdminUserResponse.of(user, counts.getOrDefault(user.getId(), 0L)));
     }
 
+    @Transactional
     public AdminUserResponse changeMembership(Long userId, Instant memberUntil) {
-        User user = userRepository.findById(userId)
-                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+        User user = find(userId, existing -> !existing.isDeleted());
         user.changeMembership(memberUntil);
-        userRepository.save(user);
-        List<Book> books = bookRepository.findOwned(userId);
-        long privateCount = books.stream().filter(Book::isPrivateBook).count();
-        return AdminUserResponse.of(user, books.size(), privateCount);
+        return respond(user);
     }
 
-    // 僅保留公開書
-    public void delete(Long userId) {
-        // 提交後才刪檔
-        deleteRecords(userId).forEach(bookService::discardFiles);
+    // 私密書同刪
+    @Transactional
+    public AdminUserResponse delete(Long userId) {
+        User user = find(userId, existing -> !existing.isDeleted());
+        Instant now = clock.instant();
+        bookRepository.findOwned(userId).stream()
+                .filter(Book::isPrivateBook)
+                .forEach(book -> book.softDelete(DeletionCause.ACCOUNT, now));
+        user.softDelete(now);
+        return respond(user);
     }
 
-    private List<String> deleteRecords(Long userId) {
-        try {
-            return transaction.execute(status -> {
-                User user = userRepository.findById(userId)
-                        .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
-                Map<Boolean, List<Book>> byPrivacy = bookRepository.findOwned(userId).stream()
-                        .collect(Collectors.partitioningBy(Book::isPrivateBook));
-                List<Book> removed = byPrivacy.get(true);
-                bookRepository.deleteAll(removed);
-                byPrivacy.get(false).forEach(Book::detachOwner);
-                // 先解除關聯
-                bookRepository.flush();
-                userRepository.delete(user);
-                return removed.stream().map(Book::getStorageKey).toList();
-            });
-        } catch (DataIntegrityViolationException ex) {
-            // 同時有上傳
-            throw new ApiException(ErrorCode.USER_DATA_CHANGED);
-        }
+    // 僅復原同刪書
+    @Transactional
+    public AdminUserResponse restore(Long userId) {
+        User user = find(userId, User::isDeleted);
+        user.restore();
+        bookRepository.findByOwnerIdAndDeletionCause(userId, DeletionCause.ACCOUNT)
+                .forEach(Book::restore);
+        return respond(user);
+    }
+
+    private User find(Long userId, Predicate<User> state) {
+        return userRepository.findById(userId)
+                .filter(state)
+                .orElseThrow(() -> new ApiException(ErrorCode.USER_NOT_FOUND));
+    }
+
+    private AdminUserResponse respond(User user) {
+        return AdminUserResponse.of(user, bookRepository.findOwned(user.getId()).size());
     }
 }

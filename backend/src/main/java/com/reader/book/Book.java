@@ -1,8 +1,10 @@
 package com.reader.book;
 
+import com.reader.common.HardDeleteGuard;
 import com.reader.user.User;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.EnumType;
 import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
@@ -17,6 +19,7 @@ import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 @Entity
+@EntityListeners(HardDeleteGuard.class)
 @Table(name = "books")
 public class Book {
 
@@ -29,9 +32,17 @@ public class Book {
     @JoinColumn(name = "owner_id")
     private User owner;
 
-    // 區分平臺書
+    // 舊版遺留
     @Column(name = "owner_deleted", nullable = false)
     private boolean ownerDeleted;
+
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
+    @Enumerated(EnumType.STRING)
+    @JdbcTypeCode(SqlTypes.VARCHAR)
+    @Column(name = "deletion_cause", length = 8)
+    private DeletionCause deletionCause;
 
     @Column(nullable = false)
     private String title;
@@ -115,16 +126,24 @@ public class Book {
     }
 
     public String ownerName() {
-        if (owner != null) {
-            return owner.getUsername();
+        if (owner == null) {
+            return ownerDeleted ? "已刪除用戶" : "平臺";
         }
-        return ownerDeleted ? "已刪除用戶" : "平臺";
+        return owner.isDeleted() ? "已刪除用戶" : owner.getUsername();
     }
 
-    // 僅公開書使用
-    public void detachOwner() {
-        this.owner = null;
-        this.ownerDeleted = true;
+    public void softDelete(DeletionCause cause, Instant when) {
+        this.deletedAt = when;
+        this.deletionCause = cause;
+    }
+
+    public void restore() {
+        this.deletedAt = null;
+        this.deletionCause = null;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
     }
 
     public User getOwner() {

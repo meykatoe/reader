@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.mock.web.MockMultipartFile;
+import org.springframework.test.web.servlet.ResultActions;
 
 class AdminUserTest extends AdminTestSupport {
 
@@ -43,7 +44,7 @@ class AdminUserTest extends AdminTestSupport {
         MockHttpSession session = signIn(createAdmin(2));
         String name = randomName("u");
         registerAndSignIn(name);
-        Long id = userRepository.findByUsername(name).orElseThrow().getId();
+        Long id = userRepository.findByUsernameAndDeletedAtIsNull(name).orElseThrow().getId();
 
         mvc.perform(get("/api/admin/users").session(session)).andExpect(status().isForbidden());
         mvc.perform(delete("/api/admin/users/" + id).session(session).with(csrf()))
@@ -55,45 +56,73 @@ class AdminUserTest extends AdminTestSupport {
     }
 
     @Test
-    void deletingUserKeepsOnlyPublicBooks() throws Exception {
+    void softDeletesAndRestoresUser() throws Exception {
         MockHttpSession admin = signIn(createAdmin(1));
         String name = randomName("u");
         MockHttpSession user = registerAndSignIn(name);
         upload(user, "公開作品", false);
         upload(user, "私密筆記", true);
-        Long id = userRepository.findByUsername(name).orElseThrow().getId();
+        upload(user, "先前自刪", true);
+        Long id = userRepository.findByUsernameAndDeletedAtIsNull(name).orElseThrow().getId();
         List<Book> owned = bookRepository.findOwned(id);
         long shared = idOf(owned, "公開作品");
         long secret = idOf(owned, "私密筆記");
+        long removedEarlier = idOf(owned, "先前自刪");
+        mvc.perform(delete("/api/books/" + removedEarlier).session(user).with(csrf()))
+                .andExpect(status().isOk());
+        String secretKey = bookRepository.findById(secret).orElseThrow().getStorageKey();
         MockHttpSession reader = registerAndSignIn(randomName("u"));
 
-        String secretKey = bookRepository.findById(secret).orElseThrow().getStorageKey();
-        String sharedKey = bookRepository.findById(shared).orElseThrow().getStorageKey();
-
-        mvc.perform(get("/api/admin/users").param("keyword", name).session(admin))
-                .andExpect(jsonPath("$.data.items[0].bookCount").value(2))
-                .andExpect(jsonPath("$.data.items[0].privateBookCount").value(1))
-                .andExpect(jsonPath("$.data.items[0].passwordHash").doesNotExist());
         mvc.perform(delete("/api/admin/users/" + id).session(admin).with(csrf()))
-                .andExpect(status().isOk());
+                .andExpect(jsonPath("$.data.deletedAt").isNotEmpty());
 
-        assertThat(userRepository.existsById(id)).isFalse();
-        // 舊登入失效
+        // 資料全部保留
+        assertThat(userRepository.existsById(id)).isTrue();
+        assertThat(bookRepository.existsById(secret)).isTrue();
+        assertThat(chapterRepository.countByBookId(secret)).isPositive();
+        assertThat(bookStorage.source(secretKey, "txt")).isPresent();
         mvc.perform(get("/api/books").session(user)).andExpect(status().isUnauthorized());
-        // 私密書全刪
-        assertThat(bookRepository.existsById(secret)).isFalse();
-        assertThat(chapterRepository.countByBookId(secret)).isZero();
-        assertThat(bookStorage.source(secretKey, "txt")).isEmpty();
-        // 公開書可讀
-        assertThat(chapterRepository.countByBookId(shared)).isPositive();
-        assertThat(bookStorage.source(sharedKey, "txt")).isPresent();
+        login(name).andExpect(status().isUnauthorized());
         mvc.perform(get("/api/books/" + shared).session(reader))
-                .andExpect(jsonPath("$.data.ownerName").value("已刪除用戶"))
-                .andExpect(jsonPath("$.data.mine").value(false));
-        mvc.perform(get("/api/books/" + shared + "/chapters/0").session(reader))
-                .andExpect(status().isOk());
-        mvc.perform(delete("/api/books/" + shared).session(reader).with(csrf()))
+                .andExpect(jsonPath("$.data.ownerName").value("已刪除用戶"));
+        mvc.perform(get("/api/books/" + secret).session(reader))
+                .andExpect(status().isNotFound());
+        listUsers(admin, name, false).andExpect(jsonPath("$.data.total").value(0));
+        listUsers(admin, name, true).andExpect(jsonPath("$.data.total").value(1));
+        mvc.perform(delete("/api/admin/users/" + id).session(admin).with(csrf()))
+                .andExpect(status().isNotFound());
+
+        mvc.perform(post("/api/admin/users/" + id + "/restore").session(admin).with(csrf()))
+                .andExpect(jsonPath("$.data.deletedAt").isEmpty())
+                .andExpect(jsonPath("$.data.bookCount").value(2));
+
+        login(name).andExpect(status().isOk());
+        // 自刪的不復活
+        assertThat(bookRepository.findOwned(id)).extracting(Book::getId)
+                .containsExactlyInAnyOrder(shared, secret);
+        mvc.perform(get("/api/books/" + shared).session(reader))
+                .andExpect(jsonPath("$.data.ownerName").value(name));
+        mvc.perform(post("/api/admin/users/" + id + "/restore").session(admin).with(csrf()))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void standardAdminCannotRestoreUser() throws Exception {
+        mvc.perform(post("/api/admin/users/1/restore").session(signIn(createAdmin(2)))
+                        .with(csrf()))
                 .andExpect(status().isForbidden());
+    }
+
+    private ResultActions login(String name) throws Exception {
+        return mvc.perform(post("/api/auth/login").with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(credentials(name, "password123")));
+    }
+
+    private ResultActions listUsers(MockHttpSession admin, String name, boolean deleted)
+            throws Exception {
+        return mvc.perform(get("/api/admin/users").param("keyword", name)
+                .param("deleted", String.valueOf(deleted)).session(admin));
     }
 
     private static long idOf(List<Book> books, String title) {
@@ -106,7 +135,7 @@ class AdminUserTest extends AdminTestSupport {
     void onlySuperAdminManagesMembership() throws Exception {
         String name = randomName("u");
         registerAndSignIn(name);
-        Long id = userRepository.findByUsername(name).orElseThrow().getId();
+        Long id = userRepository.findByUsernameAndDeletedAtIsNull(name).orElseThrow().getId();
         String path = "/api/admin/users/" + id + "/membership";
         String future = "{\"memberUntil\":\"2099-12-31T15:59:59Z\"}";
 

@@ -12,10 +12,11 @@ public final class AdminPaging {
     }
 
     // 新資料在前
-    public static Pageable newestFirst(int page, int size) {
+    public static Pageable of(boolean deleted, int page, int size) {
+        String time = deleted ? "deletedAt" : "createdAt";
         return PageRequest.of(
                 Math.max(page, 0),
                 Math.clamp(size, 1, MAX_SIZE),
-                Sort.by(Sort.Direction.DESC, "createdAt", "id"));
+                Sort.by(Sort.Direction.DESC, time, "id"));
     }
 }

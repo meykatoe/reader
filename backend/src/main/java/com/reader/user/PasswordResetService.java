@@ -58,7 +58,8 @@ public class PasswordResetService {
         }
         mailGuard.request(email, ip);
         backgroundMailer.submit(() ->
-                userRepository.findByEmail(email).ifPresent(this::sendResetMail));
+                userRepository.findByEmailAndDeletedAtIsNull(email)
+                        .ifPresent(this::sendResetMail));
     }
 
     public User resetByToken(String token, String newPassword) {
@@ -85,7 +86,7 @@ public class PasswordResetService {
         String passwordHash = passwordEncoder.encode(newPassword);
         return transaction.execute(status -> {
             verificationService.consume(ticket);
-            User user = userRepository.findByEmail(ticket.email())
+            User user = userRepository.findByEmailAndDeletedAtIsNull(ticket.email())
                     .orElseThrow(() -> new ApiException(ErrorCode.VERIFICATION_INVALID));
             user.changePassword(passwordHash);
             return userRepository.save(user);

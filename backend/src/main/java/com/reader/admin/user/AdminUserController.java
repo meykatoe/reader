@@ -8,6 +8,7 @@ import java.util.function.Function;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -26,10 +27,12 @@ public class AdminUserController {
 
     @GetMapping
     public Result<PageResponse<AdminUserResponse>> list(@RequestParam(defaultValue = "") String keyword,
+                                                        @RequestParam(defaultValue = "false") boolean deleted,
                                                         @RequestParam(defaultValue = "0") int page,
                                                         @RequestParam(defaultValue = "20") int size) {
         return Result.ok(PageResponse.of(
-                adminUserService.search(keyword.strip(), AdminPaging.newestFirst(page, size)),
+                adminUserService.search(keyword.strip(), deleted,
+                        AdminPaging.of(deleted, page, size)),
                 Function.identity()));
     }
 
@@ -40,8 +43,12 @@ public class AdminUserController {
     }
 
     @DeleteMapping("/{id}")
-    public Result<Void> delete(@PathVariable Long id) {
-        adminUserService.delete(id);
-        return Result.ok();
+    public Result<AdminUserResponse> delete(@PathVariable Long id) {
+        return Result.ok(adminUserService.delete(id));
+    }
+
+    @PostMapping("/{id}/restore")
+    public Result<AdminUserResponse> restore(@PathVariable Long id) {
+        return Result.ok(adminUserService.restore(id));
     }
 }

@@ -18,7 +18,7 @@ class EmailRegistrationTest extends EmailTestSupport {
 
         register(user, email, code).andExpect(status().isCreated());
 
-        assertThat(userRepository.findByUsername(user).orElseThrow().getEmail()).isEqualTo(email);
+        assertThat(userRepository.findByUsernameAndDeletedAtIsNull(user).orElseThrow().getEmail()).isEqualTo(email);
         // 僅能一次
         expect(register(name(), email, code), ErrorCode.VERIFICATION_INVALID);
     }

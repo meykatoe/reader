@@ -1,0 +1,5 @@
+ALTER TABLE users ADD COLUMN deleted_at DATETIME(6) NULL;
+
+ALTER TABLE books ADD COLUMN deleted_at DATETIME(6) NULL;
+
+ALTER TABLE books ADD COLUMN deletion_cause VARCHAR(8) NULL;
