@@ -7,6 +7,7 @@ import com.reader.content.Chapter;
 import com.reader.content.ChapterRepository;
 import com.reader.content.ChapterSummary;
 import com.reader.parser.ContentSanitizer;
+import com.reader.quota.ReadGuard;
 import com.reader.reading.dto.ChapterResponse;
 import com.reader.reading.dto.ProgressDto;
 import java.util.List;
@@ -20,22 +21,25 @@ public class ReadingService {
     private final BookService bookService;
     private final ChapterRepository chapterRepository;
     private final ReadingProgressRepository progressRepository;
+    private final ReadGuard readGuard;
 
     public ReadingService(BookService bookService,
                           ChapterRepository chapterRepository,
-                          ReadingProgressRepository progressRepository) {
+                          ReadingProgressRepository progressRepository,
+                          ReadGuard readGuard) {
         this.bookService = bookService;
         this.chapterRepository = chapterRepository;
         this.progressRepository = progressRepository;
+        this.readGuard = readGuard;
     }
 
     public List<ChapterSummary> listChapters(Long bookId, Long userId) {
-        bookService.getVisible(bookId, userId);
+        readGuard.open(bookService.getVisible(bookId, userId), userId);
         return chapterRepository.findSummaries(bookId);
     }
 
     public ChapterResponse getChapter(Long bookId, int index, Long userId) {
-        bookService.getVisible(bookId, userId);
+        readGuard.readChapter(bookService.getVisible(bookId, userId), userId);
         Chapter chapter = chapterRepository.findByBookIdAndIndex(bookId, index)
                 .orElseThrow(() -> ApiException.notFound("找不到章節"));
         // 換成實際網址
