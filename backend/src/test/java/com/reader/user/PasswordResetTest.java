@@ -47,6 +47,16 @@ class PasswordResetTest extends EmailTestSupport {
     }
 
     @Test
+    void usernameDigitsAreNotTheCode() throws Exception {
+        // 名稱含數字
+        Account account = createAccount("m123456ab");
+        Sent mail = forgot(account);
+
+        assertThat(mail.text()).contains(account.username());
+        resetByCode(account, mail.code()).andExpect(status().isOk());
+    }
+
+    @Test
     void linkResetsPasswordAndKillsCode() throws Exception {
         Account account = createAccount();
         Sent mail = forgot(account);
@@ -147,7 +157,10 @@ class PasswordResetTest extends EmailTestSupport {
     }
 
     private Account createAccount() throws Exception {
-        String user = name();
+        return createAccount(name());
+    }
+
+    private Account createAccount(String user) throws Exception {
         Account account = new Account(user, user + "@example.test");
         register(user, account.email(), requestCode(account.email()))
                 .andExpect(status().isCreated());
