@@ -1,8 +1,11 @@
 package com.reader.book;
 
 import com.reader.common.ApiException;
+import com.reader.parser.ParsedBook;
+import com.reader.parser.ParserService;
 import com.reader.storage.FileStorage;
 import com.reader.user.UserRepository;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
 import org.springframework.http.HttpStatus;
@@ -13,18 +16,24 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class BookService {
 
-    private static final int MAX_TITLE_LENGTH = 255;
+    private static final int MAX_TEXT_LENGTH = 255;
 
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
     private final FileStorage fileStorage;
+    private final ParserService parserService;
+    private final BookImporter bookImporter;
 
     public BookService(BookRepository bookRepository,
                        UserRepository userRepository,
-                       FileStorage fileStorage) {
+                       FileStorage fileStorage,
+                       ParserService parserService,
+                       BookImporter bookImporter) {
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
         this.fileStorage = fileStorage;
+        this.parserService = parserService;
+        this.bookImporter = bookImporter;
     }
 
     public List<Book> list(Long userId, boolean mineOnly) {
@@ -66,16 +75,20 @@ public class BookService {
         BookFormat format = BookFormat.fromFilename(file.getOriginalFilename());
         String key = UUID.randomUUID().toString();
         try {
-            fileStorage.saveSource(key, format.extension(), file);
+            Path source = fileStorage.saveSource(key, format.extension(), file);
+            ParsedBook parsed = parserService.parse(format, source);
             Book book = new Book(
                     userRepository.getReferenceById(userId),
-                    resolveTitle(title, file.getOriginalFilename()),
-                    null,
+                    resolveTitle(title, parsed.title(), file.getOriginalFilename()),
+                    truncate(parsed.author()),
                     format,
                     privateBook,
                     key,
                     file.getSize());
-            Long id = bookRepository.save(book).getId();
+            book.assignCover(parsed.coverName());
+            book.assignPageCount(parsed.pageCount());
+            fileStorage.saveAssets(key, parsed.assets());
+            Long id = bookImporter.save(book, parsed.chapters());
             return bookRepository.findWithOwner(id).orElseThrow();
         } catch (RuntimeException ex) {
             // 清除殘留檔
@@ -84,10 +97,21 @@ public class BookService {
         }
     }
 
-    private static String resolveTitle(String title, String filename) {
-        String resolved = StringUtils.hasText(title)
-                ? title.strip()
-                : StringUtils.stripFilenameExtension(StringUtils.getFilename(filename));
-        return resolved.length() > MAX_TITLE_LENGTH ? resolved.substring(0, MAX_TITLE_LENGTH) : resolved;
+    private static String resolveTitle(String input, String parsed, String filename) {
+        if (StringUtils.hasText(input)) {
+            return truncate(input);
+        }
+        if (StringUtils.hasText(parsed)) {
+            return truncate(parsed);
+        }
+        return truncate(StringUtils.stripFilenameExtension(StringUtils.getFilename(filename)));
+    }
+
+    private static String truncate(String text) {
+        if (!StringUtils.hasText(text)) {
+            return null;
+        }
+        String value = text.strip();
+        return value.length() > MAX_TEXT_LENGTH ? value.substring(0, MAX_TEXT_LENGTH) : value;
     }
 }

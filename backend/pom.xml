@@ -17,6 +17,9 @@
 
     <properties>
         <java.version>25</java.version>
+        <pdfbox.version>3.0.8</pdfbox.version>
+        <jsoup.version>1.23.2</jsoup.version>
+        <juniversalchardet.version>2.5.0</juniversalchardet.version>
     </properties>
 
     <dependencies>
@@ -49,6 +52,23 @@
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.albfernandez</groupId>
+            <artifactId>juniversalchardet</artifactId>
+            <version>${juniversalchardet.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
         </dependency>
 
         <dependency>
