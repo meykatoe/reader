@@ -12,7 +12,7 @@ export function usePdfScroll(container, onMove) {
 
   const pages = () => container.value?.querySelectorAll('[data-page]') ?? []
 
-  // 二分搜尋目前頁
+  // 二分找目前頁
   function locate() {
     const list = pages()
     const probe = container.value.scrollTop + 1

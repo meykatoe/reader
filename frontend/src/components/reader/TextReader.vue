@@ -16,7 +16,7 @@ const props = defineProps({
 const viewport = ref(null)
 const content = ref(null)
 const chromeVisible = ref(true)
-// 排版完成才顯示
+// 排版後顯示
 const ready = ref(false)
 
 const { chapters, chapter, loading, error, init, load, percentAt } = useTextBook(props.book.id)

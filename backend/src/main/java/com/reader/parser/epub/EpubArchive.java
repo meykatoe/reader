@@ -29,7 +29,7 @@ final class EpubArchive implements AutoCloseable {
         return zip.getEntry(path) != null;
     }
 
-    // 不存在回傳空值
+    // 缺檔回傳空
     byte[] read(String path) {
         ZipEntry entry = zip.getEntry(path);
         if (entry == null) {

@@ -9,7 +9,7 @@ export function usePageGestures({ previous, next, toggle, blocked = () => false 
 
   function onKey(event) {
     if (blocked() || event.target.closest?.('input, select, textarea')) return
-    // 保留按鈕空白鍵
+    // 按鈕保留空格
     if (event.key === ' ' && event.target.closest?.('button, a')) return
     if (['ArrowRight', 'PageDown', ' '].includes(event.key)) {
       event.preventDefault()
