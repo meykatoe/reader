@@ -24,6 +24,7 @@ COPY --from=build /app/target/reader-backend-*.jar app.jar
 ENV STORAGE_ROOT=/data
 USER reader
 EXPOSE 8080
-HEALTHCHECK --interval=10s --timeout=5s --start-period=60s --retries=6 \
+# 容許慢速啟動
+HEALTHCHECK --interval=10s --timeout=5s --start-period=300s --start-interval=5s --retries=6 \
     CMD bash -c '</dev/tcp/127.0.0.1/8080' || exit 1
 ENTRYPOINT ["java", "-XX:MaxRAMPercentage=75", "-jar", "app.jar"]
