@@ -1,0 +1,26 @@
+server:
+  port: 8080
+  servlet:
+    session:
+      timeout: 7d
+      cookie:
+        http-only: true
+        same-site: lax
+spring:
+  application:
+    name: reader
+  datasource:
+    url: ${DB_URL:jdbc:mysql://localhost:3307/reader?allowPublicKeyRetrieval=true&useSSL=false}
+    username: ${DB_USERNAME:reader}
+    password: ${DB_PASSWORD:reader}
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 101MB
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+reader:
+  storage:
+    root: ${STORAGE_ROOT:../data}
