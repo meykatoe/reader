@@ -4,11 +4,13 @@ const SWIPE_DISTANCE = 50
 const EDGE_ZONE = 0.3
 
 // 翻頁操作
-export function usePageGestures({ previous, next, toggle }) {
+export function usePageGestures({ previous, next, toggle, blocked = () => false }) {
   let start = null
 
   function onKey(event) {
-    if (event.target.closest?.('input, select, textarea, button')) return
+    if (blocked() || event.target.closest?.('input, select, textarea')) return
+    // 保留按鈕空白鍵
+    if (event.key === ' ' && event.target.closest?.('button, a')) return
     if (['ArrowRight', 'PageDown', ' '].includes(event.key)) {
       event.preventDefault()
       next()
