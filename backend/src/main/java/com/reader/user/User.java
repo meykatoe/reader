@@ -25,6 +25,10 @@ public class User {
     @Column(name = "created_at", nullable = false)
     private Instant createdAt;
 
+    // 會員到期日
+    @Column(name = "member_until")
+    private Instant memberUntil;
+
     protected User() {
     }
 
@@ -32,6 +36,19 @@ public class User {
         this.username = username;
         this.passwordHash = passwordHash;
         this.createdAt = Instant.now();
+    }
+
+    public boolean isMember(Instant now) {
+        return memberUntil != null && memberUntil.isAfter(now);
+    }
+
+    // 空值即取消
+    public void changeMembership(Instant memberUntil) {
+        this.memberUntil = memberUntil;
+    }
+
+    public Instant getMemberUntil() {
+        return memberUntil;
     }
 
     public Long getId() {

@@ -4,7 +4,7 @@ import { formatSize } from '../../utils/format'
 defineProps({
   book: { type: Object, required: true },
 })
-defineEmits(['toggle-privacy', 'remove'])
+defineEmits(['download', 'toggle-privacy', 'remove'])
 </script>
 
 <template>
@@ -20,11 +20,14 @@ defineEmits(['toggle-privacy', 'remove'])
     <p class="meta">{{ book.author || '未知作者' }}</p>
     <p class="meta">{{ book.mine ? '我上傳' : book.ownerName }} · {{ formatSize(book.fileSize) }}</p>
 
-    <div v-if="book.mine" class="actions">
-      <button class="button" @click="$emit('toggle-privacy', book)">
-        {{ book.isPrivate ? '設為公開' : '設為私密' }}
-      </button>
-      <button class="button remove" @click="$emit('remove', book)">刪除</button>
+    <div class="actions">
+      <button class="button" @click="$emit('download', book)">下載</button>
+      <template v-if="book.mine">
+        <button class="button" @click="$emit('toggle-privacy', book)">
+          {{ book.isPrivate ? '設為公開' : '設為私密' }}
+        </button>
+        <button class="button remove" @click="$emit('remove', book)">刪除</button>
+      </template>
     </div>
   </article>
 </template>
@@ -101,6 +104,7 @@ defineEmits(['toggle-privacy', 'remove'])
 
 .actions {
   display: flex;
+  flex-wrap: wrap;
   gap: 6px;
   margin-top: 4px;
 }

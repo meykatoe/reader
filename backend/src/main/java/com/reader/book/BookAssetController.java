@@ -2,6 +2,7 @@ package com.reader.book;
 
 import com.reader.common.ApiException;
 import com.reader.parser.ImageType;
+import com.reader.quota.ReadGuard;
 import com.reader.storage.BookStorage;
 import com.reader.user.AuthUser;
 import java.time.Duration;
@@ -25,10 +26,14 @@ public class BookAssetController {
 
     private final BookService bookService;
     private final BookStorage bookStorage;
+    private final ReadGuard readGuard;
 
-    public BookAssetController(BookService bookService, BookStorage bookStorage) {
+    public BookAssetController(BookService bookService,
+                               BookStorage bookStorage,
+                               ReadGuard readGuard) {
         this.bookService = bookService;
         this.bookStorage = bookStorage;
+        this.readGuard = readGuard;
     }
 
     @GetMapping("/cover")
@@ -42,7 +47,9 @@ public class BookAssetController {
     public ResponseEntity<Resource> asset(@AuthenticationPrincipal AuthUser user,
                                           @PathVariable Long id,
                                           @PathVariable String name) {
-        return image(bookService.getVisible(id, user.id()), name);
+        Book book = bookService.getVisible(id, user.id());
+        readGuard.open(book, user.id());
+        return image(book, name);
     }
 
     // 支援分段下載
@@ -53,6 +60,7 @@ public class BookAssetController {
         if (book.getFormat() != BookFormat.PDF) {
             throw ApiException.notFound("僅提供 PDF 原始檔");
         }
+        readGuard.open(book, user.id());
         Resource source = bookStorage.source(book.getStorageKey(), book.getFormat().extension())
                 .orElseThrow(() -> ApiException.notFound("找不到檔案"));
         return ResponseEntity.ok()

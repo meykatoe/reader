@@ -3,10 +3,21 @@ package com.reader.admin.user;
 import com.reader.user.User;
 import java.time.Instant;
 
-public record AdminUserResponse(Long id, String username, long bookCount, Instant createdAt) {
+public record AdminUserResponse(
+        Long id,
+        String username,
+        long bookCount,
+        boolean member,
+        Instant memberUntil,
+        Instant createdAt) {
 
     static AdminUserResponse of(User user, long bookCount) {
         return new AdminUserResponse(
-                user.getId(), user.getUsername(), bookCount, user.getCreatedAt());
+                user.getId(),
+                user.getUsername(),
+                bookCount,
+                user.isMember(Instant.now()),
+                user.getMemberUntil(),
+                user.getCreatedAt());
     }
 }
