@@ -27,7 +27,9 @@ public interface BookRepository extends JpaRepository<Book, Long> {
 
     // 用戶書籍數
     @Query("""
-            select b.owner.id as ownerId, count(b) as total from Book b
+            select b.owner.id as ownerId, count(b) as total,
+                   sum(case when b.privateBook = true then 1 else 0 end) as privateTotal
+            from Book b
             where b.owner.id in :ownerIds group by b.owner.id
             """)
     List<OwnerBookCount> countByOwners(@Param("ownerIds") Collection<Long> ownerIds);
