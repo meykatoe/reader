@@ -1,13 +1,13 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { onUnauthorized } from './api/http'
 import { auth, clearUser, loadUser } from './stores/auth'
-import HomeView from './views/HomeView.vue'
+import ShelfView from './views/ShelfView.vue'
 import LoginView from './views/LoginView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: '/', component: HomeView },
+    { path: '/', component: ShelfView },
     { path: '/login', component: LoginView, meta: { public: true } },
   ],
 })
