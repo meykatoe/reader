@@ -5,13 +5,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 
 public record AdminBookUpdateRequest(
-        @NotBlank(message = "請輸入書名")
-        @Size(max = 255, message = "書名過長")
+        @NotBlank(message = "TITLE_REQUIRED")
+        @Size(max = 255, message = "TITLE_TOO_LONG")
         String title,
 
-        @Size(max = 255, message = "作者名稱過長")
+        @Size(max = 255, message = "AUTHOR_TOO_LONG")
         String author,
 
-        @NotNull(message = "請指定是否私密")
+        @NotNull(message = "VISIBILITY_REQUIRED")
         Boolean isPrivate) {
 }

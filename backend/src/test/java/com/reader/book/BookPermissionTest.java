@@ -68,14 +68,14 @@ class BookPermissionTest {
 
         assertThat(visibleIds(guest)).contains(id);
         mvc.perform(get("/api/books/" + id).with(guest))
-                .andExpect(jsonPath("$.mine").value(false));
+                .andExpect(jsonPath("$.data.mine").value(false));
         mvc.perform(delete("/api/books/" + id).with(guest).with(csrf()))
                 .andExpect(status().isForbidden());
         mvc.perform(patch("/api/books/" + id).with(owner).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"isPrivate\":true}"))
-                .andExpect(jsonPath("$.isPrivate").value(true));
+                .andExpect(jsonPath("$.data.isPrivate").value(true));
         mvc.perform(delete("/api/books/" + id).with(owner).with(csrf()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -83,7 +83,7 @@ class BookPermissionTest {
         int id = upload(true);
 
         mvc.perform(get("/api/books/" + id + "/chapters/0").with(owner))
-                .andExpect(jsonPath("$.title").value("第一章"));
+                .andExpect(jsonPath("$.data.title").value("第一章"));
         mvc.perform(get("/api/books/" + id + "/chapters").with(guest))
                 .andExpect(status().isNotFound());
         mvc.perform(get("/api/books/" + id + "/chapters/0").with(guest))
@@ -92,9 +92,9 @@ class BookPermissionTest {
         mvc.perform(put("/api/books/" + id + "/progress").with(owner).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"location\":0,\"ratio\":0.5}"))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
         mvc.perform(get("/api/books/" + id + "/progress").with(owner))
-                .andExpect(jsonPath("$.ratio").value(0.5));
+                .andExpect(jsonPath("$.data.ratio").value(0.5));
         mvc.perform(put("/api/books/" + id + "/progress").with(owner).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"location\":9,\"ratio\":0}"))
@@ -135,12 +135,12 @@ class BookPermissionTest {
                         .with(owner).with(csrf()))
                 .andExpect(status().isCreated())
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        return JsonPath.read(json, "$.id");
+        return JsonPath.read(json, "$.data.id");
     }
 
     private List<Integer> visibleIds(RequestPostProcessor viewer) throws Exception {
         String json = mvc.perform(get("/api/books").with(viewer))
                 .andReturn().getResponse().getContentAsString(StandardCharsets.UTF_8);
-        return JsonPath.read(json, "$[*].id");
+        return JsonPath.read(json, "$.data[*].id");
     }
 }

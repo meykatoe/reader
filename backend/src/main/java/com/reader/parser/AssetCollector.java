@@ -1,5 +1,6 @@
 package com.reader.parser;
 
+import com.reader.common.ErrorCode;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -35,7 +36,7 @@ public class AssetCollector {
     private String store(String sourceKey, byte[] data, ImageType type) {
         totalBytes += data.length;
         if (totalBytes > MAX_TOTAL_BYTES) {
-            throw new ParseException("書籍內的圖片總量過大");
+            throw new ParseException(ErrorCode.BOOK_CONTENT_TOO_LARGE);
         }
         String name = "img-" + (assets.size() + 1) + "." + type.extension();
         assets.put(name, data);

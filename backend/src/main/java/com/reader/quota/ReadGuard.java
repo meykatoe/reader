@@ -1,9 +1,10 @@
 package com.reader.quota;
 
 import com.reader.book.Book;
+import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import com.reader.limit.LimitProperties;
 import com.reader.limit.RateLimiter;
-import com.reader.limit.TooManyRequestsException;
 import java.time.Duration;
 import org.springframework.stereotype.Component;
 
@@ -31,7 +32,7 @@ public class ReadGuard {
         if (!book.isOwnedBy(userId)
                 && !limiter.tryAcquire("chapter|" + userId,
                         limits.chaptersPerMinute(), Duration.ofMinutes(1))) {
-            throw new TooManyRequestsException("翻閱速度過快，請稍後再試");
+            throw new ApiException(ErrorCode.READ_TOO_FAST);
         }
         open(book, userId);
     }

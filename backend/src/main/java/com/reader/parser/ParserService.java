@@ -1,6 +1,7 @@
 package com.reader.parser;
 
 import com.reader.book.BookFormat;
+import com.reader.common.ErrorCode;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.util.EnumMap;
@@ -24,7 +25,7 @@ public class ParserService {
     public ParsedBook parse(BookFormat format, Path file) {
         BookParser parser = parsers.get(format);
         if (parser == null) {
-            throw new ParseException("尚未支援 " + format + " 格式");
+            throw new ParseException(ErrorCode.FORMAT_UNSUPPORTED);
         }
         try {
             return parser.parse(file);
@@ -32,7 +33,7 @@ public class ParserService {
             throw ex;
         } catch (IOException | RuntimeException ex) {
             log.warn("Failed to parse {} file", format, ex);
-            throw new ParseException("檔案解析失敗，請確認檔案是否完整");
+            throw new ParseException(ErrorCode.BOOK_PARSE_FAILED);
         }
     }
 }

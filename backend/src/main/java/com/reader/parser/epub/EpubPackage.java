@@ -1,5 +1,6 @@
 package com.reader.parser.epub;
 
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParseException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -25,7 +26,7 @@ record EpubPackage(
     static EpubPackage read(EpubArchive archive) {
         Element rootFile = archive.readXml(CONTAINER).selectFirst("rootfile[full-path]");
         if (rootFile == null) {
-            throw new ParseException("EPUB 結構不完整");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         String opfPath = rootFile.attr("full-path");
         Document opf = archive.readXml(opfPath);

@@ -57,10 +57,10 @@ class AdminUserTest extends AdminTestSupport {
         Long bookId = bookRepository.findOwned(id).getFirst().getId();
 
         mvc.perform(get("/api/admin/users").param("keyword", name).session(admin))
-                .andExpect(jsonPath("$.items[0].bookCount").value(1))
-                .andExpect(jsonPath("$.items[0].passwordHash").doesNotExist());
+                .andExpect(jsonPath("$.data.items[0].bookCount").value(1))
+                .andExpect(jsonPath("$.data.items[0].passwordHash").doesNotExist());
         mvc.perform(delete("/api/admin/users/" + id).session(admin).with(csrf()))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
 
         assertThat(userRepository.existsById(id)).isFalse();
         assertThat(bookRepository.existsById(bookId)).isFalse();
@@ -84,15 +84,15 @@ class AdminUserTest extends AdminTestSupport {
         MockHttpSession admin = signIn(createAdmin(1));
         mvc.perform(put(path).session(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(future))
-                .andExpect(jsonPath("$.member").value(true))
-                .andExpect(jsonPath("$.memberUntil").value("2099-12-31T15:59:59Z"));
+                .andExpect(jsonPath("$.data.member").value(true))
+                .andExpect(jsonPath("$.data.memberUntil").value("2099-12-31T15:59:59Z"));
         mvc.perform(put(path).session(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"memberUntil\":\"2000-01-01T00:00:00Z\"}"))
                 .andExpect(status().isBadRequest());
         mvc.perform(put(path).session(admin).with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content("{\"memberUntil\":null}"))
-                .andExpect(jsonPath("$.member").value(false));
+                .andExpect(jsonPath("$.data.member").value(false));
     }
 
     private MockHttpSession registerAndSignIn(String name) throws Exception {

@@ -2,6 +2,7 @@ package com.reader.admin.book;
 
 import com.reader.admin.AdminPaging;
 import com.reader.common.PageResponse;
+import com.reader.common.Result;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -29,31 +30,31 @@ public class AdminBookController {
     }
 
     @GetMapping
-    public PageResponse<AdminBookResponse> list(@RequestParam(defaultValue = "") String keyword,
-                                                @RequestParam(defaultValue = "0") int page,
-                                                @RequestParam(defaultValue = "20") int size) {
-        return PageResponse.of(
+    public Result<PageResponse<AdminBookResponse>> list(@RequestParam(defaultValue = "") String keyword,
+                                                        @RequestParam(defaultValue = "0") int page,
+                                                        @RequestParam(defaultValue = "20") int size) {
+        return Result.ok(PageResponse.of(
                 adminBookService.search(keyword.strip(), AdminPaging.newestFirst(page, size)),
-                AdminBookResponse::of);
+                AdminBookResponse::of));
     }
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @ResponseStatus(HttpStatus.CREATED)
-    public AdminBookResponse create(@RequestPart("file") MultipartFile file,
-                                    @RequestParam(required = false) String title,
-                                    @RequestParam(defaultValue = "false") boolean isPrivate) {
-        return AdminBookResponse.of(adminBookService.create(file, title, isPrivate));
+    public Result<AdminBookResponse> create(@RequestPart("file") MultipartFile file,
+                                            @RequestParam(required = false) String title,
+                                            @RequestParam(defaultValue = "false") boolean isPrivate) {
+        return Result.ok(AdminBookResponse.of(adminBookService.create(file, title, isPrivate)));
     }
 
     @PutMapping("/{id}")
-    public AdminBookResponse update(@PathVariable Long id,
-                                    @Valid @RequestBody AdminBookUpdateRequest request) {
-        return AdminBookResponse.of(adminBookService.update(id, request));
+    public Result<AdminBookResponse> update(@PathVariable Long id,
+                                            @Valid @RequestBody AdminBookUpdateRequest request) {
+        return Result.ok(AdminBookResponse.of(adminBookService.update(id, request)));
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void delete(@PathVariable Long id) {
+    public Result<Void> delete(@PathVariable Long id) {
         adminBookService.delete(id);
+        return Result.ok();
     }
 }

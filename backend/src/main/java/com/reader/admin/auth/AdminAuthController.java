@@ -1,13 +1,15 @@
 package com.reader.admin.auth;
 
+import com.reader.audit.LogAccount;
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
+import com.reader.common.Result;
 import com.reader.limit.AccountGuard;
 import com.reader.security.SessionLogin;
 import com.reader.user.dto.LoginRequest;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -20,7 +22,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 // 不提供註冊
@@ -50,24 +51,27 @@ public class AdminAuthController {
     }
 
     @PostMapping("/login")
-    public AdminResponse login(@Valid @RequestBody LoginRequest body,
-                               HttpServletRequest request,
-                               HttpServletResponse response) {
+    public Result<AdminResponse> login(@Valid @RequestBody LoginRequest body,
+                                       HttpServletRequest request,
+                                       HttpServletResponse response) {
+        LogAccount.mark(request, null, body.username());
         Authentication authentication = accountGuard.login(
                 "admin", body.username(), request.getRemoteAddr(), () -> authenticate(body));
         sessionLogin.establish(authentication, adminSession.repository(), request, response);
-        return AdminResponse.of((AdminPrincipal) authentication.getPrincipal());
+        AdminPrincipal admin = (AdminPrincipal) authentication.getPrincipal();
+        LogAccount.mark(request, admin.id(), admin.username());
+        return Result.ok(AdminResponse.of(admin));
     }
 
     @GetMapping("/me")
-    public AdminResponse me(@AuthenticationPrincipal AdminPrincipal admin) {
-        return AdminResponse.of(admin);
+    public Result<AdminResponse> me(@AuthenticationPrincipal AdminPrincipal admin) {
+        return Result.ok(AdminResponse.of(admin));
     }
 
     @PostMapping("/logout")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void logout(HttpServletRequest request) {
+    public Result<Void> logout(HttpServletRequest request) {
         adminSession.end(request);
+        return Result.ok();
     }
 
     private Authentication authenticate(LoginRequest body) {
@@ -75,7 +79,7 @@ public class AdminAuthController {
             return provider.authenticate(UsernamePasswordAuthenticationToken.unauthenticated(
                     body.username(), body.password()));
         } catch (AuthenticationException ex) {
-            throw new ApiException(HttpStatus.UNAUTHORIZED, "帳號或密碼錯誤");
+            throw new ApiException(ErrorCode.INVALID_CREDENTIALS);
         }
     }
 }

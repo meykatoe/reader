@@ -1,6 +1,7 @@
 package com.reader.book;
 
 import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import com.reader.parser.ImageType;
 import com.reader.quota.ReadGuard;
 import com.reader.storage.BookStorage;
@@ -58,11 +59,11 @@ public class BookAssetController {
                                          @PathVariable Long id) {
         Book book = bookService.getVisible(id, user.id());
         if (book.getFormat() != BookFormat.PDF) {
-            throw ApiException.notFound("僅提供 PDF 原始檔");
+            throw new ApiException(ErrorCode.PDF_ONLY);
         }
         readGuard.open(book, user.id());
         Resource source = bookStorage.source(book.getStorageKey(), book.getFormat().extension())
-                .orElseThrow(() -> ApiException.notFound("找不到檔案"));
+                .orElseThrow(() -> new ApiException(ErrorCode.BOOK_FILE_NOT_FOUND));
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(source);
@@ -70,10 +71,10 @@ public class BookAssetController {
 
     private ResponseEntity<Resource> image(Book book, String name) {
         if (name == null || !ASSET_NAME.matcher(name).matches()) {
-            throw ApiException.notFound("找不到圖片");
+            throw new ApiException(ErrorCode.IMAGE_NOT_FOUND);
         }
         Resource asset = bookStorage.asset(book.getStorageKey(), name)
-                .orElseThrow(() -> ApiException.notFound("找不到圖片"));
+                .orElseThrow(() -> new ApiException(ErrorCode.IMAGE_NOT_FOUND));
         String mediaType = ImageType.fromName(name).orElseThrow().mediaType();
         return ResponseEntity.ok()
                 .contentType(MediaType.parseMediaType(mediaType))

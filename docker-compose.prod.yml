@@ -1,10 +1,18 @@
 # 隔離開發環境
 name: reader-prod
 
+# 限制日誌大小
+x-logging: &logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "5"
+
 services:
   mysql:
     image: mysql:8.4
     restart: unless-stopped
+    logging: *logging
     environment:
       MYSQL_DATABASE: reader
       MYSQL_USER: reader
@@ -22,6 +30,7 @@ services:
     image: ${DOCKERHUB_USERNAME:-local}/reader:${IMAGE_TAG:-latest}
     build: .
     restart: unless-stopped
+    logging: *logging
     environment:
       DB_URL: jdbc:mysql://mysql:3306/reader?allowPublicKeyRetrieval=true&useSSL=false
       DB_USERNAME: reader
@@ -38,6 +47,8 @@ services:
       LIMIT_FREE_DOWNLOADS: ${LIMIT_FREE_DOWNLOADS:-1}
       LIMIT_DAILY_READ_BOOKS: ${LIMIT_DAILY_READ_BOOKS:-30}
       LIMIT_CHAPTERS_PER_MINUTE: ${LIMIT_CHAPTERS_PER_MINUTE:-60}
+      LOG_USER_RETENTION_DAYS: ${LOG_USER_RETENTION_DAYS:-90}
+      LOG_ADMIN_RETENTION_DAYS: ${LOG_ADMIN_RETENTION_DAYS:-365}
       # 記憶體調校
       JAVA_TOOL_OPTIONS: ${JAVA_OPTS:-}
       # 安全連線用

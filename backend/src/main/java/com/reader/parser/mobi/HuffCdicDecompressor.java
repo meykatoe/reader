@@ -1,5 +1,6 @@
 package com.reader.parser.mobi;
 
+import com.reader.common.ErrorCode;
 import com.reader.parser.ParseException;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ final class HuffCdicDecompressor implements Decompressor {
 
     HuffCdicDecompressor(byte[] huff, List<byte[]> cdicRecords) {
         if (!Bytes.startsWith(huff, 0, "HUFF")) {
-            throw new ParseException("MOBI 字典損毀");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         loadTables(huff);
         cdicRecords.forEach(this::loadDictionary);
@@ -44,7 +45,7 @@ final class HuffCdicDecompressor implements Decompressor {
             long value = Bytes.u32(huff, cacheOffset + i * 4);
             int length = (int) (value & 0x1F);
             if (length == 0) {
-                throw new ParseException("MOBI 字典損毀");
+                throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
             }
             cacheLength[i] = length;
             cacheTerminal[i] = (value & 0x80) != 0;
@@ -59,7 +60,7 @@ final class HuffCdicDecompressor implements Decompressor {
 
     private void loadDictionary(byte[] cdic) {
         if (!Bytes.startsWith(cdic, 0, "CDIC")) {
-            throw new ParseException("MOBI 字典損毀");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         int phrases = Bytes.index(cdic, 8);
         int bits = Bytes.index(cdic, 12);
@@ -78,13 +79,13 @@ final class HuffCdicDecompressor implements Decompressor {
         try {
             return unpack(input, 0);
         } catch (IndexOutOfBoundsException ex) {
-            throw new ParseException("MOBI 壓縮資料損毀");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
     }
 
     private byte[] unpack(byte[] input, int depth) {
         if (depth > MAX_DEPTH) {
-            throw new ParseException("MOBI 字典遞迴過深");
+            throw new ParseException(ErrorCode.BOOK_STRUCTURE_INVALID);
         }
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         long bitsLeft = input.length * 8L;
@@ -116,7 +117,7 @@ final class HuffCdicDecompressor implements Decompressor {
             int index = (int) ((max - code) >>> (32 - length));
             output.writeBytes(expand(index, depth));
             if (output.size() > MAX_OUTPUT) {
-                throw new ParseException("MOBI 解壓內容過大");
+                throw new ParseException(ErrorCode.BOOK_CONTENT_TOO_LARGE);
             }
         }
     }

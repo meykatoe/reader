@@ -1,6 +1,7 @@
 package com.reader.parser.txt;
 
 import com.reader.book.BookFormat;
+import com.reader.common.ErrorCode;
 import com.reader.parser.BookParser;
 import com.reader.parser.ParseException;
 import com.reader.parser.ParsedBook;
@@ -34,7 +35,7 @@ public class TxtParser implements BookParser {
     public ParsedBook parse(Path file) throws IOException {
         List<ParsedChapter> chapters = split(TextDecoder.decode(Files.readAllBytes(file)));
         if (chapters.isEmpty()) {
-            throw new ParseException("檔案內沒有可閱讀的文字");
+            throw new ParseException(ErrorCode.BOOK_NO_CONTENT);
         }
         return ParsedBook.textOnly(chapters);
     }
