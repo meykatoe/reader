@@ -1,5 +1,6 @@
 package com.reader.config;
 
+import com.reader.audit.AccountCaptureFilter;
 import com.reader.admin.auth.AdminAuthority;
 import com.reader.admin.auth.AdminRefreshFilter;
 import com.reader.admin.auth.AdminRepository;
@@ -40,7 +41,8 @@ public class AdminSecurityConfig {
                         .anyRequest().denyAll())
                 .csrf(csrf -> csrf.spa())
                 .securityContext(context -> context.securityContextRepository(adminSession.repository()))
-                .addFilterAfter(new AdminRefreshFilter(adminRepository), SecurityContextHolderFilter.class)
+                .addFilterAfter(new AccountCaptureFilter(), SecurityContextHolderFilter.class)
+                .addFilterAfter(new AdminRefreshFilter(adminRepository), AccountCaptureFilter.class)
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(errors.unauthenticated())
                         .accessDeniedHandler(errors.denied()))

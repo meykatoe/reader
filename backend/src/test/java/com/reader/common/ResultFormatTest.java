@@ -1,5 +1,6 @@
 package com.reader.common;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.matchesPattern;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.containsString;
@@ -12,6 +13,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.reader.audit.ApiLogWriter;
+import com.reader.audit.UserApiLogRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +36,12 @@ class ResultFormatTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private ApiLogWriter logWriter;
+
+    @Autowired
+    private UserApiLogRepository userLogs;
 
     @TestConfiguration
     @RestController
@@ -73,8 +82,14 @@ class ResultFormatTest {
 
     @Test
     void unexpectedErrorHidesDetail() throws Exception {
-        expect(mvc.perform(get("/api/test/boom").with(user("u"))), 500, ErrorCode.INTERNAL_ERROR)
-                .andExpect(content().string(not(containsString("secret-internal-detail"))));
+        String requestId = expect(mvc.perform(get("/api/test/boom").with(user("u"))),
+                500, ErrorCode.INTERNAL_ERROR)
+                .andExpect(content().string(not(containsString("secret-internal-detail"))))
+                .andReturn().getResponse().getHeader(RequestIdFilter.HEADER);
+
+        logWriter.flush();
+        assertThat(userLogs.findByRequestId(requestId).getFirst().getErrorDetail())
+                .isEqualTo("java.lang.IllegalStateException: secret-internal-detail");
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.reader.user;
 
+import com.reader.audit.LogAccount;
 import com.reader.common.ApiException;
 import com.reader.common.ErrorCode;
 import com.reader.common.Result;
@@ -51,6 +52,7 @@ public class AuthController {
     @ResponseStatus(HttpStatus.CREATED)
     public Result<Void> register(@Valid @RequestBody RegisterRequest body,
                                  HttpServletRequest request) {
+        LogAccount.mark(request, null, body.username());
         accountGuard.register(request.getRemoteAddr(),
                 () -> userService.register(body.username(), body.password()));
         return Result.ok();
@@ -60,11 +62,14 @@ public class AuthController {
     public Result<UserResponse> login(@Valid @RequestBody LoginRequest body,
                                       HttpServletRequest request,
                                       HttpServletResponse response) {
+        LogAccount.mark(request, null, body.username());
         Authentication authentication = accountGuard.login(
                 "user", body.username(), request.getRemoteAddr(), () -> authenticate(body));
         sessionLogin.establish(authentication, contextRepository, request, response);
 
-        return Result.ok(toResponse((AuthUser) authentication.getPrincipal()));
+        AuthUser user = (AuthUser) authentication.getPrincipal();
+        LogAccount.mark(request, user.id(), user.username());
+        return Result.ok(toResponse(user));
     }
 
     @GetMapping("/me")

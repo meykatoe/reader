@@ -1,5 +1,6 @@
 package com.reader.config;
 
+import com.reader.audit.AccountCaptureFilter;
 import com.reader.common.ResultWriter;
 import com.reader.security.SecurityErrorHandlers;
 import com.reader.user.DeletedUserFilter;
@@ -34,7 +35,8 @@ public class SecurityConfig {
                         // 其餘為靜態頁
                         .anyRequest().permitAll())
                 .csrf(csrf -> csrf.spa())
-                .addFilterAfter(new DeletedUserFilter(userRepository), SecurityContextHolderFilter.class)
+                .addFilterAfter(new AccountCaptureFilter(), SecurityContextHolderFilter.class)
+                .addFilterAfter(new DeletedUserFilter(userRepository), AccountCaptureFilter.class)
                 .securityContext(context -> context.securityContextRepository(contextRepository))
                 .exceptionHandling(handling -> handling
                         .authenticationEntryPoint(errors.unauthenticated())

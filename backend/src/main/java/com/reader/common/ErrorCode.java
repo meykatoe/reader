@@ -124,6 +124,16 @@ public enum ErrorCode {
         return Arrays.stream(values()).filter(value -> value.name().equals(name)).findFirst();
     }
 
+    // 容器狀態對應
+    public static ErrorCode forStatus(int status) {
+        return switch (status) {
+            case 404 -> RESOURCE_NOT_FOUND;
+            case 405 -> METHOD_NOT_ALLOWED;
+            case 413 -> FILE_TOO_LARGE;
+            default -> status < 500 ? REQUEST_REJECTED : INTERNAL_ERROR;
+        };
+    }
+
     public int code() {
         return code;
     }

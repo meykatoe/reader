@@ -1,5 +1,6 @@
 package com.reader.admin.auth;
 
+import com.reader.audit.LogAccount;
 import com.reader.common.ApiException;
 import com.reader.common.ErrorCode;
 import com.reader.common.Result;
@@ -53,10 +54,13 @@ public class AdminAuthController {
     public Result<AdminResponse> login(@Valid @RequestBody LoginRequest body,
                                        HttpServletRequest request,
                                        HttpServletResponse response) {
+        LogAccount.mark(request, null, body.username());
         Authentication authentication = accountGuard.login(
                 "admin", body.username(), request.getRemoteAddr(), () -> authenticate(body));
         sessionLogin.establish(authentication, adminSession.repository(), request, response);
-        return Result.ok(AdminResponse.of((AdminPrincipal) authentication.getPrincipal()));
+        AdminPrincipal admin = (AdminPrincipal) authentication.getPrincipal();
+        LogAccount.mark(request, admin.id(), admin.username());
+        return Result.ok(AdminResponse.of(admin));
     }
 
     @GetMapping("/me")

@@ -24,12 +24,6 @@ public class FallbackErrorController implements ErrorController {
         int status = request.getAttribute(RequestDispatcher.ERROR_STATUS_CODE) instanceof Integer value
                 ? value
                 : 404;
-        ErrorCode code = switch (status) {
-            case 404 -> ErrorCode.RESOURCE_NOT_FOUND;
-            case 405 -> ErrorCode.METHOD_NOT_ALLOWED;
-            case 413 -> ErrorCode.FILE_TOO_LARGE;
-            default -> status < 500 ? ErrorCode.REQUEST_REJECTED : ErrorCode.INTERNAL_ERROR;
-        };
-        writer.error(request, response, code);
+        writer.error(request, response, ErrorCode.forStatus(status));
     }
 }
