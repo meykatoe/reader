@@ -1,0 +1,49 @@
+# 與開發環境隔離
+name: reader-prod
+
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_DATABASE: reader
+      MYSQL_USER: reader
+      MYSQL_PASSWORD: ${DB_PASSWORD:?請設定 DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:?請設定 DB_ROOT_PASSWORD}
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_0900_ai_ci
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1"]
+      interval: 5s
+      retries: 30
+
+  backend:
+    image: ${DOCKERHUB_USERNAME:-local}/reader-backend:${IMAGE_TAG:-latest}
+    build: ./backend
+    restart: unless-stopped
+    environment:
+      DB_URL: jdbc:mysql://mysql:3306/reader?allowPublicKeyRetrieval=true&useSSL=false
+      DB_USERNAME: reader
+      DB_PASSWORD: ${DB_PASSWORD}
+      # HTTPS時開啟
+      SERVER_SERVLET_SESSION_COOKIE_SECURE: ${COOKIE_SECURE:-false}
+    volumes:
+      - book-data:/data
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  frontend:
+    image: ${DOCKERHUB_USERNAME:-local}/reader-frontend:${IMAGE_TAG:-latest}
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-80}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+volumes:
+  mysql-data:
+  book-data:
