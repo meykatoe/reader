@@ -3,11 +3,13 @@ import { onUnauthorized } from './api/http'
 import { auth, clearUser, loadUser } from './stores/auth'
 import ShelfView from './views/ShelfView.vue'
 import LoginView from './views/LoginView.vue'
+import ReaderView from './views/ReaderView.vue'
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     { path: '/', component: ShelfView },
+    { path: '/books/:id(\\d+)', component: ReaderView },
     { path: '/login', component: LoginView, meta: { public: true } },
   ],
 })
