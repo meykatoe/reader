@@ -6,6 +6,7 @@ import java.time.Instant;
 public record AdminUserResponse(
         Long id,
         String username,
+        String email,
         long bookCount,
         boolean member,
         Instant memberUntil,
@@ -15,6 +16,7 @@ public record AdminUserResponse(
         return new AdminUserResponse(
                 user.getId(),
                 user.getUsername(),
+                user.getEmail(),
                 bookCount,
                 user.isMember(Instant.now()),
                 user.getMemberUntil(),

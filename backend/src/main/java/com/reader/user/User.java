@@ -47,6 +47,10 @@ public class User {
         this.email = email;
     }
 
+    public void changePassword(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
+
     public String getEmail() {
         return email;
     }
