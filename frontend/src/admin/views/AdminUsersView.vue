@@ -43,6 +43,7 @@ function remove(user) {
         <tr>
           <th>編號</th>
           <th>用戶名稱</th>
+          <th>信箱</th>
           <th>書籍數</th>
           <th>會員</th>
           <th>註冊時間</th>
@@ -53,6 +54,7 @@ function remove(user) {
         <tr v-for="user in items" :key="user.id">
           <td>{{ user.id }}</td>
           <td class="wide">{{ user.username }}</td>
+          <td>{{ user.email || '—' }}</td>
           <td>{{ user.bookCount }}</td>
           <td>{{ user.member ? `至 ${formatDate(user.memberUntil)}` : '—' }}</td>
           <td>{{ new Date(user.createdAt).toLocaleString('zh-TW') }}</td>

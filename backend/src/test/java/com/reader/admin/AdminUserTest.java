@@ -12,6 +12,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import com.reader.book.BookRepository;
 import com.reader.content.ChapterRepository;
+import com.reader.support.Registrations;
 import com.reader.user.UserRepository;
 import java.nio.charset.StandardCharsets;
 import org.junit.jupiter.api.Test;
@@ -98,7 +99,8 @@ class AdminUserTest extends AdminTestSupport {
     private MockHttpSession registerAndSignIn(String name) throws Exception {
         String body = credentials(name, "password123");
         mvc.perform(post("/api/auth/register").with(csrf())
-                .contentType(MediaType.APPLICATION_JSON).content(body));
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(Registrations.body(verifications, name, "password123")));
         return (MockHttpSession) mvc.perform(post("/api/auth/login").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andReturn().getRequest().getSession();

@@ -10,12 +10,12 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-// 刪除即登出
-public class DeletedUserFilter extends OncePerRequestFilter {
+// 過期即登出
+public class StaleSessionFilter extends OncePerRequestFilter {
 
     private final UserRepository userRepository;
 
-    public DeletedUserFilter(UserRepository userRepository) {
+    public StaleSessionFilter(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
 
@@ -29,8 +29,7 @@ public class DeletedUserFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain chain) throws ServletException, IOException {
         Authentication current = SecurityContextHolder.getContext().getAuthentication();
-        if (current != null && current.getPrincipal() instanceof AuthUser user
-                && !userRepository.existsById(user.id())) {
+        if (current != null && current.getPrincipal() instanceof AuthUser user && isStale(user)) {
             SecurityContextHolder.clearContext();
             HttpSession session = request.getSession(false);
             if (session != null) {
@@ -38,5 +37,11 @@ public class DeletedUserFilter extends OncePerRequestFilter {
             }
         }
         chain.doFilter(request, response);
+    }
+
+    private boolean isStale(AuthUser user) {
+        return userRepository.findPasswordHash(user.id())
+                .map(hash -> !hash.equals(user.passwordHash()))
+                .orElse(true);
     }
 }

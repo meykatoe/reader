@@ -1,10 +1,11 @@
 package com.reader.limit;
 
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.UUID;
+import com.reader.support.Registrations;
+import com.reader.verification.VerificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,6 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 
 @SpringBootTest(properties = "reader.limits.registrations=3")
 @AutoConfigureMockMvc
@@ -21,6 +23,9 @@ class AccountLimitTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private VerificationService verifications;
 
     @Test
     void limitsRegistrationPerAddress() throws Exception {
@@ -73,7 +78,8 @@ class AccountLimitTest {
     }
 
     private ResultActions register(String username, String ip) throws Exception {
-        return send("/api/auth/register", username, "password123", ip);
+        return post("/api/auth/register",
+                Registrations.body(verifications, username, "password123"), ip);
     }
 
     private ResultActions login(String path, String username, String password, String ip)
@@ -83,12 +89,17 @@ class AccountLimitTest {
 
     private ResultActions send(String path, String username, String password, String ip)
             throws Exception {
-        return mvc.perform(post(path).with(csrf())
+        return post(path,
+                "{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}", ip);
+    }
+
+    private ResultActions post(String path, String body, String ip) throws Exception {
+        return mvc.perform(MockMvcRequestBuilders.post(path).with(csrf())
                 .with(request -> {
                     request.setRemoteAddr(ip);
                     return request;
                 })
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"username\":\"" + username + "\",\"password\":\"" + password + "\"}"));
+                .content(body));
     }
 }

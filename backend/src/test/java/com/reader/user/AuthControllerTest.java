@@ -6,6 +6,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import com.reader.support.Registrations;
+import com.reader.verification.VerificationService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -23,11 +25,12 @@ class AuthControllerTest {
     @Autowired
     private MockMvc mvc;
 
+    @Autowired
+    private VerificationService verifications;
+
     @Test
     void registerThenLogin() throws Exception {
-        String body = """
-                {"username":"alice","password":"password123"}
-                """;
+        String body = Registrations.body(verifications, "alice", "password123");
         mvc.perform(post("/api/auth/register").with(csrf())
                         .contentType(MediaType.APPLICATION_JSON).content(body))
                 .andExpect(status().isCreated());

@@ -15,6 +15,13 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     boolean existsByUsername(String username);
 
+    @Query("select u.passwordHash from User u where u.id = :id")
+    Optional<String> findPasswordHash(@Param("id") Long id);
+
+    boolean existsByEmail(String email);
+
+    Optional<User> findByEmail(String email);
+
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("select u from User u where u.id = :id")
     Optional<User> lockById(@Param("id") Long id);

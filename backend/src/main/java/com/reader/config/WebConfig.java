@@ -17,7 +17,9 @@ public class WebConfig implements WebMvcConfigurer {
     // 對應前端路由
     @Override
     public void addViewControllers(ViewControllerRegistry registry) {
-        registry.addViewController("/login").setViewName(INDEX);
+        for (String path : List.of("/login", "/forgot-password", "/reset-password")) {
+            registry.addViewController(path).setViewName(INDEX);
+        }
         registry.addViewController("/books/{id:\\d+}").setViewName(INDEX);
         for (String path : List.of("/admin", "/admin/login", "/admin/books", "/admin/users")) {
             registry.addViewController(path).setViewName(INDEX);

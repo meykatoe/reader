@@ -12,6 +12,16 @@ const router = createRouter({
     { path: '/', component: ShelfView },
     { path: '/books/:id(\\d+)', component: ReaderView },
     { path: '/login', component: LoginView, meta: { public: true } },
+    {
+      path: '/forgot-password',
+      component: () => import('./views/ForgotPasswordView.vue'),
+      meta: { public: true },
+    },
+    {
+      path: '/reset-password',
+      component: () => import('./views/ResetPasswordView.vue'),
+      meta: { public: true },
+    },
     ...adminRoutes,
   ],
 })

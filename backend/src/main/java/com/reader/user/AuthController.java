@@ -5,7 +5,9 @@ import com.reader.common.ApiException;
 import com.reader.common.ErrorCode;
 import com.reader.common.Result;
 import com.reader.limit.AccountGuard;
+import com.reader.limit.MailGuard;
 import com.reader.security.SessionLogin;
+import com.reader.user.dto.EmailRequest;
 import com.reader.user.dto.LoginRequest;
 import com.reader.user.dto.RegisterRequest;
 import com.reader.user.dto.UserResponse;
@@ -30,22 +32,34 @@ import org.springframework.web.bind.annotation.RestController;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final UserService userService;
+    private final RegistrationService registrationService;
+    private final MailGuard mailGuard;
     private final AuthenticationManager authenticationManager;
     private final SecurityContextRepository contextRepository;
     private final SessionLogin sessionLogin;
     private final AccountGuard accountGuard;
 
-    public AuthController(UserService userService,
+    public AuthController(RegistrationService registrationService,
+                          MailGuard mailGuard,
                           AuthenticationManager authenticationManager,
                           SecurityContextRepository contextRepository,
                           SessionLogin sessionLogin,
                           AccountGuard accountGuard) {
-        this.userService = userService;
+        this.registrationService = registrationService;
+        this.mailGuard = mailGuard;
         this.authenticationManager = authenticationManager;
         this.contextRepository = contextRepository;
         this.sessionLogin = sessionLogin;
         this.accountGuard = accountGuard;
+    }
+
+    @PostMapping("/register/code")
+    public Result<Void> sendRegistrationCode(@Valid @RequestBody EmailRequest body,
+                                             HttpServletRequest request) {
+        String email = Emails.normalize(body.email());
+        LogAccount.mark(request, null, email);
+        registrationService.sendCode(email, request.getRemoteAddr());
+        return Result.ok();
     }
 
     @PostMapping("/register")
@@ -53,8 +67,10 @@ public class AuthController {
     public Result<Void> register(@Valid @RequestBody RegisterRequest body,
                                  HttpServletRequest request) {
         LogAccount.mark(request, null, body.username());
+        mailGuard.verification(request.getRemoteAddr());
         accountGuard.register(request.getRemoteAddr(),
-                () -> userService.register(body.username(), body.password()));
+                () -> registrationService.register(body.username(), body.password(),
+                        Emails.normalize(body.email()), body.code()));
         return Result.ok();
     }
 
