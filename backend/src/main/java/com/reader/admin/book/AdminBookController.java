@@ -31,10 +31,12 @@ public class AdminBookController {
 
     @GetMapping
     public Result<PageResponse<AdminBookResponse>> list(@RequestParam(defaultValue = "") String keyword,
+                                                        @RequestParam(defaultValue = "false") boolean deleted,
                                                         @RequestParam(defaultValue = "0") int page,
                                                         @RequestParam(defaultValue = "20") int size) {
         return Result.ok(PageResponse.of(
-                adminBookService.search(keyword.strip(), AdminPaging.newestFirst(page, size)),
+                adminBookService.search(keyword.strip(), deleted,
+                        AdminPaging.of(deleted, page, size)),
                 AdminBookResponse::of));
     }
 
@@ -50,6 +52,11 @@ public class AdminBookController {
     public Result<AdminBookResponse> update(@PathVariable Long id,
                                             @Valid @RequestBody AdminBookUpdateRequest request) {
         return Result.ok(AdminBookResponse.of(adminBookService.update(id, request)));
+    }
+
+    @PostMapping("/{id}/restore")
+    public Result<AdminBookResponse> restore(@PathVariable Long id) {
+        return Result.ok(AdminBookResponse.of(adminBookService.restore(id)));
     }
 
     @DeleteMapping("/{id}")

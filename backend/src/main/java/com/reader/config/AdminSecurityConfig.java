@@ -35,6 +35,8 @@ public class AdminSecurityConfig {
                         .hasAuthority(AdminAuthority.USER_VIEW.name())
                         .requestMatchers(HttpMethod.PUT, "/api/admin/users/*/membership")
                         .hasAuthority(AdminAuthority.USER_MEMBERSHIP.name())
+                        .requestMatchers(HttpMethod.POST, "/api/admin/users/*/restore")
+                        .hasAuthority(AdminAuthority.USER_DELETE.name())
                         .requestMatchers(HttpMethod.DELETE, "/api/admin/users/*")
                         .hasAuthority(AdminAuthority.USER_DELETE.name())
                         // 未列出即拒絕

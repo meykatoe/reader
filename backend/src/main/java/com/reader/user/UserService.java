@@ -16,7 +16,7 @@ public class UserService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) {
-        return userRepository.findByUsername(username)
+        return userRepository.findByUsernameAndDeletedAtIsNull(username)
                 .map(AuthUser::from)
                 .orElseThrow(() -> new UsernameNotFoundException(username));
     }

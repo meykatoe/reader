@@ -49,16 +49,22 @@ public class RegistrationService {
         try {
             mailGuard.reserveDelivery();
             // 回應無差異
-            AccountMails.Mail mail = userRepository.existsByEmail(email)
-                    ? AccountMails.alreadyRegistered()
-                    : AccountMails.registrationCode(
+            AccountMails.Mail mail = userRepository.findByEmail(email)
+                    .map(RegistrationService::existingAccountMail)
+                    .orElseGet(() -> AccountMails.registrationCode(
                             verificationService.issue(email, Purpose.REGISTER),
-                            limits.verificationTtl());
+                            limits.verificationTtl()));
             mailer.send(email, mail.subject(), mail.text());
         } catch (RuntimeException ex) {
             mailGuard.release(email);
             throw ex;
         }
+    }
+
+    private static AccountMails.Mail existingAccountMail(User user) {
+        return user.isDeleted()
+                ? AccountMails.accountDisabled()
+                : AccountMails.alreadyRegistered();
     }
 
     public void register(String username, String password, String email, String code) {

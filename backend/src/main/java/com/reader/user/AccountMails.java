@@ -29,6 +29,15 @@ final class AccountMails {
                 """);
     }
 
+    static Mail accountDisabled() {
+        return new Mail("Reader 帳號通知", """
+                有人嘗試用這個信箱註冊，但它綁定的帳號目前已停用。
+
+                若要恢復帳號，請聯絡網站管理員。
+                若非本人操作，請忽略這封信。
+                """);
+    }
+
     // 兩者擇一
     static Mail passwordReset(String username, IssuedSecret secret, String link, Duration ttl) {
         return new Mail("Reader 重設密碼", """

@@ -76,6 +76,15 @@ class BookPermissionTest {
                 .andExpect(jsonPath("$.data.isPrivate").value(true));
         mvc.perform(delete("/api/books/" + id).with(owner).with(csrf()))
                 .andExpect(status().isOk());
+        // 刪後全隱藏
+        for (String path : new String[] {"", "/chapters", "/chapters/0", "/progress"}) {
+            mvc.perform(get("/api/books/" + id + path).with(owner))
+                    .andExpect(status().isNotFound());
+        }
+        mvc.perform(get("/api/books/" + id + "/download").with(owner))
+                .andExpect(status().isNotFound());
+        assertThat(visibleIds(owner)).doesNotContain(id);
+        assertThat(visibleIds(guest)).doesNotContain(id);
     }
 
     @Test

@@ -1,7 +1,9 @@
 package com.reader.user;
 
+import com.reader.common.HardDeleteGuard;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EntityListeners;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
@@ -9,6 +11,7 @@ import jakarta.persistence.Table;
 import java.time.Instant;
 
 @Entity
+@EntityListeners(HardDeleteGuard.class)
 @Table(name = "users")
 public class User {
 
@@ -33,6 +36,9 @@ public class User {
     @Column(name = "member_until")
     private Instant memberUntil;
 
+    @Column(name = "deleted_at")
+    private Instant deletedAt;
+
     protected User() {
     }
 
@@ -45,6 +51,22 @@ public class User {
     public User(String username, String passwordHash, String email) {
         this(username, passwordHash);
         this.email = email;
+    }
+
+    public void softDelete(Instant when) {
+        this.deletedAt = when;
+    }
+
+    public void restore() {
+        this.deletedAt = null;
+    }
+
+    public boolean isDeleted() {
+        return deletedAt != null;
+    }
+
+    public Instant getDeletedAt() {
+        return deletedAt;
     }
 
     public void changePassword(String passwordHash) {

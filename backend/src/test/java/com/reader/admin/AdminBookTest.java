@@ -6,6 +6,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -48,6 +49,15 @@ class AdminBookTest extends AdminTestSupport {
         mvc.perform(delete("/api/admin/books/" + id).session(session).with(csrf()))
                 .andExpect(status().isOk());
         mvc.perform(delete("/api/admin/books/" + id).session(session).with(csrf()))
+                .andExpect(status().isNotFound());
+
+        // 可復原
+        mvc.perform(get("/api/admin/books").param("keyword", "新書名")
+                        .param("deleted", "true").session(session))
+                .andExpect(jsonPath("$.data.items[?(@.id == " + id + ")].deletedAt").isNotEmpty());
+        mvc.perform(post("/api/admin/books/" + id + "/restore").session(session).with(csrf()))
+                .andExpect(jsonPath("$.data.deletedAt").isEmpty());
+        mvc.perform(post("/api/admin/books/" + id + "/restore").session(session).with(csrf()))
                 .andExpect(status().isNotFound());
     }
 
