@@ -3,11 +3,12 @@ package com.reader.book;
 import com.reader.common.ApiException;
 import com.reader.parser.ParsedBook;
 import com.reader.parser.ParserService;
-import com.reader.storage.FileStorage;
+import com.reader.storage.BookStorage;
 import com.reader.user.UserRepository;
-import java.nio.file.Path;
 import java.util.List;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -16,22 +17,24 @@ import org.springframework.web.multipart.MultipartFile;
 @Service
 public class BookService {
 
+    private static final Logger log = LoggerFactory.getLogger(BookService.class);
+
     private static final int MAX_TEXT_LENGTH = 255;
 
     private final BookRepository bookRepository;
     private final UserRepository userRepository;
-    private final FileStorage fileStorage;
+    private final BookStorage bookStorage;
     private final ParserService parserService;
     private final BookImporter bookImporter;
 
     public BookService(BookRepository bookRepository,
                        UserRepository userRepository,
-                       FileStorage fileStorage,
+                       BookStorage bookStorage,
                        ParserService parserService,
                        BookImporter bookImporter) {
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
-        this.fileStorage = fileStorage;
+        this.bookStorage = bookStorage;
         this.parserService = parserService;
         this.bookImporter = bookImporter;
     }
@@ -57,7 +60,7 @@ public class BookService {
     public void delete(Long bookId, Long userId) {
         Book book = getOwned(bookId, userId);
         bookRepository.delete(book);
-        fileStorage.delete(book.getStorageKey());
+        discardFiles(book.getStorageKey());
     }
 
     private Book getOwned(Long bookId, Long userId) {
@@ -74,9 +77,8 @@ public class BookService {
         }
         BookFormat format = BookFormat.fromFilename(file.getOriginalFilename());
         String key = UUID.randomUUID().toString();
-        try {
-            Path source = fileStorage.saveSource(key, format.extension(), file);
-            ParsedBook parsed = parserService.parse(format, source);
+        try (UploadedFile upload = UploadedFile.of(file, format.extension())) {
+            ParsedBook parsed = parserService.parse(format, upload.path());
             Book book = new Book(
                     userRepository.getReferenceById(userId),
                     resolveTitle(title, parsed.title(), file.getOriginalFilename()),
@@ -87,13 +89,29 @@ public class BookService {
                     file.getSize());
             book.assignCover(parsed.coverName());
             book.assignPageCount(parsed.pageCount());
-            fileStorage.saveAssets(key, parsed.assets());
-            Long id = bookImporter.save(book, parsed.chapters());
+            Long id = store(book, upload, parsed);
             return bookRepository.findWithOwner(id).orElseThrow();
+        }
+    }
+
+    private Long store(Book book, UploadedFile upload, ParsedBook parsed) {
+        try {
+            bookStorage.save(book.getStorageKey(), book.getFormat().extension(),
+                    upload.path(), parsed.assets());
+            return bookImporter.save(book, parsed.chapters());
         } catch (RuntimeException ex) {
             // 清除殘留檔
-            fileStorage.delete(key);
+            discardFiles(book.getStorageKey());
             throw ex;
+        }
+    }
+
+    // 失敗僅記錄
+    private void discardFiles(String key) {
+        try {
+            bookStorage.delete(key);
+        } catch (RuntimeException ex) {
+            log.warn("Orphaned files left in storage: {}", BookStorage.directory(key), ex);
         }
     }
 
