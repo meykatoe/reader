@@ -13,6 +13,10 @@ export const updateAdminBook = (id, body) => request(`/admin/books/${id}`, { met
 export const listAdminUsers = (params) => request(`/admin/users?${query(params)}`)
 export const setMembership = (id, memberUntil) =>
   request(`/admin/users/${id}/membership`, { method: 'PUT', body: { memberUntil } })
+export const restoreAdminUser = (id) =>
+  request(`/admin/users/${id}/restore`, { method: 'POST' })
+export const restoreAdminBook = (id) =>
+  request(`/admin/books/${id}/restore`, { method: 'POST' })
 export const deleteAdminUser = (id) => request(`/admin/users/${id}`, { method: 'DELETE' })
 
 export const deleteAdminBook = (id) => request(`/admin/books/${id}`, { method: 'DELETE' })

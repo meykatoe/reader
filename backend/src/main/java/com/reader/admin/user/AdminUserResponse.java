@@ -8,20 +8,20 @@ public record AdminUserResponse(
         String username,
         String email,
         long bookCount,
-        long privateBookCount,
         boolean member,
         Instant memberUntil,
-        Instant createdAt) {
+        Instant createdAt,
+        Instant deletedAt) {
 
-    static AdminUserResponse of(User user, long bookCount, long privateBookCount) {
+    static AdminUserResponse of(User user, long bookCount) {
         return new AdminUserResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
                 bookCount,
-                privateBookCount,
                 user.isMember(Instant.now()),
                 user.getMemberUntil(),
-                user.getCreatedAt());
+                user.getCreatedAt(),
+                user.getDeletedAt());
     }
 }

@@ -11,11 +11,11 @@ import org.springframework.data.repository.query.Param;
 
 public interface UserRepository extends JpaRepository<User, Long> {
 
-    Optional<User> findByUsername(String username);
+    Optional<User> findByUsernameAndDeletedAtIsNull(String username);
 
     boolean existsByUsername(String username);
 
-    @Query("select u.passwordHash from User u where u.id = :id")
+    @Query("select u.passwordHash from User u where u.id = :id and u.deletedAt is null")
     Optional<String> findPasswordHash(@Param("id") Long id);
 
     boolean existsByEmail(String email);
@@ -26,5 +26,11 @@ public interface UserRepository extends JpaRepository<User, Long> {
     @Query("select u from User u where u.id = :id")
     Optional<User> lockById(@Param("id") Long id);
 
-    Page<User> findByUsernameContainingIgnoreCase(String username, Pageable pageable);
+    Optional<User> findByEmailAndDeletedAtIsNull(String email);
+
+    Page<User> findByUsernameContainingIgnoreCaseAndDeletedAtIsNull(
+            String username, Pageable pageable);
+
+    Page<User> findByUsernameContainingIgnoreCaseAndDeletedAtIsNotNull(
+            String username, Pageable pageable);
 }

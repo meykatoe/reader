@@ -6,6 +6,7 @@ import com.reader.parser.ParsedBook;
 import com.reader.parser.ParserService;
 import com.reader.storage.BookStorage;
 import com.reader.user.UserRepository;
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import org.slf4j.Logger;
@@ -26,17 +27,20 @@ public class BookService {
     private final BookStorage bookStorage;
     private final ParserService parserService;
     private final BookImporter bookImporter;
+    private final Clock clock;
 
     public BookService(BookRepository bookRepository,
                        UserRepository userRepository,
                        BookStorage bookStorage,
                        ParserService parserService,
-                       BookImporter bookImporter) {
+                       BookImporter bookImporter,
+                       Clock clock) {
         this.bookRepository = bookRepository;
         this.userRepository = userRepository;
         this.bookStorage = bookStorage;
         this.parserService = parserService;
         this.bookImporter = bookImporter;
+        this.clock = clock;
     }
 
     public List<Book> list(Long userId, boolean mineOnly) {
@@ -45,7 +49,7 @@ public class BookService {
 
     // 權限檢查
     public Book getVisible(Long bookId, Long userId) {
-        return bookRepository.findWithOwner(bookId)
+        return bookRepository.findActive(bookId)
                 .filter(book -> book.isVisibleTo(userId))
                 .orElseThrow(() -> new ApiException(ErrorCode.BOOK_NOT_FOUND));
     }
@@ -58,27 +62,18 @@ public class BookService {
     }
 
     public Book get(Long bookId) {
-        return bookRepository.findWithOwner(bookId)
+        return bookRepository.findActive(bookId)
                 .orElseThrow(() -> new ApiException(ErrorCode.BOOK_NOT_FOUND));
     }
 
     public void delete(Long bookId, Long userId) {
-        remove(getOwned(bookId, userId));
+        softDelete(getOwned(bookId, userId), DeletionCause.OWNER);
     }
 
     // 須先驗權限
-    public void remove(Book book) {
-        bookRepository.delete(book);
-        discardFiles(book.getStorageKey());
-    }
-
-    // 失敗僅記錄
-    public void discardFiles(String key) {
-        try {
-            bookStorage.delete(key);
-        } catch (RuntimeException ex) {
-            log.warn("Orphaned files left in storage: {}", BookStorage.directory(key), ex);
-        }
+    public void softDelete(Book book, DeletionCause cause) {
+        book.softDelete(cause, clock.instant());
+        bookRepository.save(book);
     }
 
     private Book getOwned(Long bookId, Long userId) {
@@ -109,7 +104,7 @@ public class BookService {
             book.assignCover(parsed.coverName());
             book.assignPageCount(parsed.pageCount());
             Long id = store(book, upload, parsed);
-            return bookRepository.findWithOwner(id).orElseThrow();
+            return bookRepository.findActive(id).orElseThrow();
         }
     }
 
@@ -122,6 +117,15 @@ public class BookService {
             // 清除殘留檔
             discardFiles(book.getStorageKey());
             throw ex;
+        }
+    }
+
+    // 僅清失敗上傳
+    private void discardFiles(String key) {
+        try {
+            bookStorage.delete(key);
+        } catch (RuntimeException ex) {
+            log.warn("Orphaned files left in storage: {}", BookStorage.directory(key), ex);
         }
     }
 

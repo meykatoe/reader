@@ -3,6 +3,9 @@ package com.reader.admin.book;
 import com.reader.book.Book;
 import com.reader.book.BookRepository;
 import com.reader.book.BookService;
+import com.reader.book.DeletionCause;
+import com.reader.common.ApiException;
+import com.reader.common.ErrorCode;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -21,9 +24,8 @@ public class AdminBookService {
         this.bookRepository = bookRepository;
     }
 
-    public Page<Book> search(String keyword, Pageable pageable) {
-        return bookRepository.findByTitleContainingIgnoreCaseOrAuthorContainingIgnoreCase(
-                keyword, keyword, pageable);
+    public Page<Book> search(String keyword, boolean deleted, Pageable pageable) {
+        return bookRepository.search(keyword, deleted, pageable);
     }
 
     public Book create(MultipartFile file, String title, boolean privateBook) {
@@ -40,6 +42,14 @@ public class AdminBookService {
     }
 
     public void delete(Long bookId) {
-        bookService.remove(bookService.get(bookId));
+        bookService.softDelete(bookService.get(bookId), DeletionCause.ADMIN);
+    }
+
+    public Book restore(Long bookId) {
+        Book book = bookRepository.findDeleted(bookId)
+                .orElseThrow(() -> new ApiException(ErrorCode.BOOK_NOT_FOUND));
+        book.restore();
+        bookRepository.save(book);
+        return bookService.get(bookId);
     }
 }

@@ -119,8 +119,6 @@ public enum ErrorCode {
 
     // 查無用戶
     USER_NOT_FOUND(50001, HttpStatus.NOT_FOUND, "User not found"),
-    // 資料已變動
-    USER_DATA_CHANGED(50002, HttpStatus.CONFLICT, "User data changed, please retry"),
     // 到期日錯誤
     MEMBERSHIP_EXPIRY_INVALID(50003, HttpStatus.BAD_REQUEST, "Expiry must be in the future"),
 

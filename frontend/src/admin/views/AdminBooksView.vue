@@ -2,20 +2,27 @@
 import { ref } from 'vue'
 import UploadDialog from '../../components/shelf/UploadDialog.vue'
 import { formatSize } from '../../utils/format'
-import { createAdminBook, deleteAdminBook, listAdminBooks } from '../api'
+import { createAdminBook, deleteAdminBook, listAdminBooks, restoreAdminBook } from '../api'
+import ActionNotice from '../components/ActionNotice.vue'
 import BookEditDialog from '../components/BookEditDialog.vue'
 import ListPager from '../components/ListPager.vue'
+import StatusTabs from '../components/StatusTabs.vue'
 import { usePagedList } from '../composables/usePagedList'
+import { useSoftDelete } from '../composables/useSoftDelete'
 
-const { items, total, page, pageCount, keyword, loading, error, load, run } =
-  usePagedList(listAdminBooks)
+const list = usePagedList(listAdminBooks)
+const { items, total, page, pageCount, keyword, deleted, loading, pending, error, load } = list
+const { notice, removeItem, restoreItem } = useSoftDelete(list, {
+  remove: deleteAdminBook,
+  restore: restoreAdminBook,
+})
 
 const uploading = ref(false)
 const editing = ref(null)
 
 function remove(book) {
-  if (window.confirm(`確定刪除《${book.title}》（${book.ownerName}）？刪除後無法復原。`)) {
-    run(() => deleteAdminBook(book.id))
+  if (window.confirm(`確定刪除《${book.title}》（${book.ownerName}）？可在「已刪除」中復原。`)) {
+    removeItem(book, `《${book.title}》`)
   }
 }
 
@@ -28,10 +35,12 @@ function finish() {
 
 <template>
   <div class="admin-toolbar">
+    <StatusTabs v-model="deleted" />
     <input v-model="keyword" type="search" placeholder="搜尋書名或作者" />
     <button class="button primary" @click="uploading = true">新增書籍</button>
   </div>
   <p v-if="error" class="error">{{ error }}</p>
+  <ActionNotice :notice="notice" :disabled="pending" />
 
   <div class="table-wrap">
     <table class="admin-table">
@@ -44,7 +53,7 @@ function finish() {
           <th>上傳者</th>
           <th>狀態</th>
           <th>大小</th>
-          <th>上傳時間</th>
+          <th>{{ deleted ? '刪除時間' : '上傳時間' }}</th>
           <th>操作</th>
         </tr>
       </thead>
@@ -57,10 +66,22 @@ function finish() {
           <td>{{ book.ownerName }}</td>
           <td>{{ book.isPrivate ? '私密' : '公開' }}</td>
           <td>{{ formatSize(book.fileSize) }}</td>
-          <td>{{ new Date(book.createdAt).toLocaleString('zh-TW') }}</td>
+          <td>{{ new Date(deleted ? book.deletedAt : book.createdAt).toLocaleString('zh-TW') }}</td>
           <td>
-            <button class="button" @click="editing = book">修改</button>
-            <button class="button danger" @click="remove(book)">刪除</button>
+            <button
+              v-if="deleted"
+              class="button"
+              :disabled="pending || loading"
+              @click="restoreItem(book, `《${book.title}》`)"
+            >
+              復原
+            </button>
+            <template v-else>
+              <button class="button" @click="editing = book">修改</button>
+              <button class="button danger" :disabled="pending || loading" @click="remove(book)">
+                刪除
+              </button>
+            </template>
           </td>
         </tr>
       </tbody>
